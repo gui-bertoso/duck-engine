@@ -1,5 +1,4 @@
 import random
-
 import pygame
 
 from settings import EMPTY_NODE_ICON_PATH

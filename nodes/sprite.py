@@ -1,14 +1,12 @@
-import sys
-
 import pygame
 
-from nodes.empty_node import EmptyNode
+from nodes import Node
 from settings import NONE_ICON_PATH
 
 
-class Sprite(EmptyNode):
+class Sprite(Node):
     def __init__(self):
-        EmptyNode.__init__(self)
+        super().__init__()
         self.texture = None
         self.icon = pygame.image.load(NONE_ICON_PATH)
     def update(self):

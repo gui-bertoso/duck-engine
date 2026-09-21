@@ -47,7 +47,7 @@ class NodesDisplay:
         self.scroll_y = 0
         self.window = None
         self.rect = rect
-        self.click_event = threading.Event()
+        self.click_event = None
 
         self.color = (30, 30, 30)
 
@@ -66,7 +66,7 @@ class NodesDisplay:
             i.render()
 
             
-    def add_node(self, node:NodesDisplayNode):
+    def add_node(self, _node:NodesDisplayNode):
         i = len(self.nodes)
         column = i % 3
         row = i // 3
@@ -74,12 +74,12 @@ class NodesDisplay:
         x = self.rect.left + (column * self.node_size.x) + 2.5
         y = self.rect.top + (row * self.node_size.y) + 2.5
 
-        node.position.x = x
-        node.position.y = y
+        _node.position.x = x
+        _node.position.y = y
 
-        node.window = self.window
+        _node.window = self.window
 
-        self.nodes.append(node)
+        self.nodes.append(_node)
 
         print_log("new node added to nodes display", LogType.Info, 1)
         print_log(f"nodes list : {self.nodes}", LogType.Detail, 2)
@@ -98,6 +98,7 @@ class NodesDisplayNode:
         self.click_color = (60, 60, 250)
         self.rect = None
         self.parent = None
+        self.font = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_MAIN_FONT_SIZE)
         self.window = None
         self.is_preview_only = False
 
@@ -106,7 +107,7 @@ class NodesDisplayNode:
             self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
             pygame.draw.rect(self.window, self.base_color, self.rect)
 
-            text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render(self.name, True, (255, 255, 255))
+            text = self.font.render(self.name, True, (255, 255, 255))
             text_rect = text.get_rect(center=self.rect.center)
             self.window.blit(text, text_rect)
         else:
@@ -129,7 +130,7 @@ class NodesDisplayNode:
 
             pygame.draw.rect(self.window, color, self.rect)
 
-            text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render(self.name, True, (255, 255, 255))
+            text = self.font.render(self.name, True, (255, 255, 255))
             text_rect = text.get_rect(center=self.rect.center)
             self.window.blit(text, text_rect)
 
@@ -152,8 +153,7 @@ class NodesDisplayNode:
 class Engine:
     def __init__(self):
 
-        self.left_panel_divisor = None
-        self.inspector_max_right_width = None
+        self.cpu_cores = None
         print_log(f"initializing pygame", LogType.Detail, 1)
         pygame.init()
         pygame.font.init()
@@ -191,6 +191,9 @@ class Engine:
 
         self.tab_size = INSPECTOR_LEFT_PANEL_WIDTH / 3
 
+        self.left_panel_divisor = None
+        self.inspector_max_right_width = None
+
         self.inspector_right_width = INSPECTOR_LEFT_PANEL_WIDTH
         self.resizing_left_inspector_left_panel = False
         self.resizing_right_inspector_left_panel = False
@@ -214,6 +217,8 @@ class Engine:
         ]
 
         self.nodes_display = None
+
+        self.sub_runtime_0_thread = None
 
 
         print_log(f"creating hardware variables", LogType.Detail, 1)
@@ -241,6 +246,11 @@ class Engine:
         self.ready_percentage = 0
 
 
+        print_log(f"creating default fonts", LogType.Detail, 1)
+        self.default_main_font = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_MAIN_FONT_SIZE)
+        self.default_title_font = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE)
+
+
         print_log(f"starting hardware getter thread", LogType.Detail, 1)
         self.hardware_data_getter_thread.start()
 
@@ -259,16 +269,16 @@ class Engine:
 
             self.window.fill(BACKGROUND_COLOR)
 
-            text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render("Loading", True, DEFAULT_FONT_COLOR)
+            text = self.default_title_font.render("Loading", True, DEFAULT_FONT_COLOR)
             self.window.blit(text, (WINDOW_LOADING_WIDTH/2-text.get_size()[0]/2, WINDOW_LOADING_HEIGHT/2-text.get_size()[1]/2))
 
             percent = min(self.ready_percentage, 100) / 100.0
             pygame.draw.rect(self.window, (0, 255, 0), (0, WINDOW_LOADING_HEIGHT-20, WINDOW_LOADING_WIDTH * percent, 20))
 
             if self.ready_percentage > 80:
-                text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render("Getting ready, wait", True, DEFAULT_FONT_COLOR)
-                self.window.blit(text, (WINDOW_LOADING_WIDTH-text.get_size()[0]/2, WINDOW_LOADING_HEIGHT+DEFAULT_FONT_SIZE))
-    
+                text = self.default_main_font.render("Getting ready, wait", True, DEFAULT_FONT_COLOR)
+                self.window.blit(text, (WINDOW_LOADING_WIDTH-text.get_size()[0]/2, WINDOW_LOADING_HEIGHT+DEFAULT_MAIN_FONT_SIZE))
+
             pygame.display.flip()
 
             if self.ready:
@@ -278,7 +288,7 @@ class Engine:
         self.start()
 
 
-    def start(self):        
+    def start(self):
         self.window = pygame.display.set_mode((WINDOW_BASE_WIDTH, WINDOW_BASE_HEIGHT), vsync=VSYNC_ENABLED, display=DEFAULT_DISPLAY)
 
         print_log(f"starting sub runtime 0", LogType.Detail, 1)
@@ -301,8 +311,8 @@ class Engine:
         try:
             while not self.close_event.is_set():
                 self.update_dynamic_tab_1_data()
-        except Exception as e:
-            print_log(f"error initiating sub runtime 0 {e}", LogType.Error, 1)
+        except Exception as _e:
+            print_log(f"error initiating sub runtime 0 {_e}", LogType.Error, 1)
 
     def runtime(self):
         print_log(f"populating nodes display", LogType.Detail, 1)
@@ -332,22 +342,22 @@ class Engine:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         self.click_event.set()
+                        print("click")
                 if self.can_resize_inspector_left_panel:
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        if abs(event.pos[0] - self.inspector_right_width) <= 5:
+                        if self.inspector_right_width is not None and event.pos is not None and abs(event.pos[0] - self.inspector_right_width) <= 5:
                             self.resizing_right_inspector_left_panel = True
-                    elif event.type == pygame.MOUSEMOTION and self.resizing_right_inspector_left_panel:
+                    elif self.inspector_right_width is not None and event.pos is not None and event.type == pygame.MOUSEMOTION and self.resizing_right_inspector_left_panel:
                         self.inspector_right_width = max(self.inspector_min_right_width, min(event.pos[0], self.inspector_max_right_width))
 
                         INSPECTOR_LEFT_PANEL_WIDTH = self.inspector_right_width
-                
+
                         self.tab_size = INSPECTOR_LEFT_PANEL_WIDTH / 3
 
-                    elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    elif self.inspector_right_width is not None and event.pos is not None and event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                         self.resizing_right_inspector_left_panel = False
 
             RUNTIME_EVENT_PROCESS_TIME = time.perf_counter() - start_time
-
             self.window.fill(BACKGROUND_COLOR)
 
             start_time = time.perf_counter()
@@ -363,8 +373,28 @@ class Engine:
             RUNTIME_INSPECTOR_TIME = time.perf_counter() - start_time
 
             pygame.display.flip()
-
             RUNTIME_PROCESS_TIME = time.perf_counter() - all_start_time
+
+
+    def populate_nodes_in_display(self):
+        _nd_rect = pygame.Rect(10, INSPECTOR_TAB_HEIGHT+45, self.inspector_nodes_display_size, self.inspector_nodes_display_size)
+        self.nodes_display = NodesDisplay(_nd_rect)
+        self.nodes_display.click_event = self.click_event
+        self.nodes_display.window = self.window
+
+        for _node in self.nodes:
+            new_node = NodesDisplayNode()
+
+            t_node = _node()
+
+            new_node.parent = self
+
+            new_node.name = t_node.__class__.__name__
+            new_node.node = _node
+            new_node.icon = t_node.icon
+
+            self.nodes_display.add_node(new_node)
+
 
     def inspector(self):
         pygame.draw.rect(self.window, (50, 50, 50), (0, 0, INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT))
@@ -438,8 +468,8 @@ class Engine:
             case 2:
                 self.inspector_tab_2()
 
-        if self.inspector_selected_node != None:
-            self.inspector_selected_node.position = pygame.math.Vector2(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1]) 
+        if self.inspector_selected_node is not None:
+            self.inspector_selected_node.position = pygame.math.Vector2(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1])
             self.inspector_selected_node.render()
 
             if self.click_event.is_set():
@@ -449,43 +479,26 @@ class Engine:
                 self.scene.add_node(n_node)
 
     def inspector_tab_0(self):
-        text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render("Controls", True, DEFAULT_FONT_COLOR)
+        text = self.default_title_font.render("Controls", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
 
         self.nodes_display.render()
 
-        text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_SUBTEXT_SIZE).render(f"Current Scene: {self.scene}", True, DEFAULT_FONT_COLOR)
+        text = self.default_main_font.render(f"Current Scene: {self.scene}", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 0 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-        text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_SUBTEXT_SIZE).render(f"Selected Node: {self.inspector_selected_node}", True, DEFAULT_FONT_COLOR)
+        text = self.default_main_font.render(f"Selected Node: {self.inspector_selected_node}", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 1 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-        text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_SUBTEXT_SIZE).render(f"NODES IN SCENE: {len(self.scene.root_node.children)}", True, DEFAULT_FONT_COLOR)
+        text = self.default_main_font.render(f"NODES IN SCENE: {len(self.scene.root_node.children)}", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 2 * (INSPECTOR_SUBTEXT_SIZE + 5)))
         text_str = self.inspector_selected_node
-        if self.inspector_selected_node != None:
+        if self.inspector_selected_node is not None:
             text_str = float(pympler.asizeof.asizesof(self.inspector_selected_node.node())[0]) / 1024**2
-        text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_SUBTEXT_SIZE).render(f"Selected Node Memory Usage: {text_str}MB", True, DEFAULT_FONT_COLOR)
+        text = self.default_main_font.render(f"Selected Node Memory Usage: {text_str}MB", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 3 * (INSPECTOR_SUBTEXT_SIZE + 5)))
 
-    def populate_nodes_in_display(self):
-        nd_rect = pygame.Rect(10, INSPECTOR_TAB_HEIGHT+45, self.inspector_nodes_display_size, self.inspector_nodes_display_size)
-        self.nodes_display = NodesDisplay(nd_rect)
-        self.nodes_display.window = self.window
-
-        for node in self.nodes:
-            new_node = NodesDisplayNode()
-
-            t_node = node()
-
-            new_node.parent = self
-            
-            new_node.name = t_node.__class__.__name__
-            new_node.node = node
-            new_node.icon = t_node.icon
-
-            self.nodes_display.add_node(new_node)
-
     def inspector_tab_1(self):
-        text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render("Analysis", True, DEFAULT_FONT_COLOR)
+        start_time = time.perf_counter()
+        text = self.default_title_font.render("Analysis", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
 
         analysis_helper = [
@@ -520,11 +533,13 @@ class Engine:
         ]
 
         for index, text in enumerate(analysis_helper):
-            setting_text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_SUBTEXT_SIZE).render(text, True, DEFAULT_FONT_COLOR)
+            setting_text = self.default_main_font.render(text, True, DEFAULT_FONT_COLOR)
             self.window.blit(setting_text, (10, WINDOW_BASE_HEIGHT / 10 + index * (INSPECTOR_SUBTEXT_SIZE + 5)))
 
+        print(time.perf_counter() - start_time)
+
     def inspector_tab_2(self):
-        text = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_FONT_SIZE).render("Settings", True, DEFAULT_FONT_COLOR)
+        text = self.default_title_font.render("Settings", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
 
         settings_helper = [
@@ -532,7 +547,6 @@ class Engine:
             f"Node Icon Path: {NODE_ICON_PATH}",
             f"Root Icon Path: {ROOT_ICON_PATH}",
             f"Default Font: {DEFAULT_FONT}",
-            f"Default Font Size: {DEFAULT_FONT_SIZE}",
             f"Inspector Tab Font Size: {INSPECTOR_TAB_FONT_SIZE}",
             f"Background Color: {BACKGROUND_COLOR}",
             f"Inspector Tab Base Color: {INSPECTOR_TAB_BASE_COLOR}",
@@ -554,7 +568,7 @@ class Engine:
         ]
 
         for index, text in enumerate(settings_helper):
-            setting_text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_SUBTEXT_SIZE).render(text, True, DEFAULT_FONT_COLOR)
+            setting_text = self.default_main_font.render(text, True, DEFAULT_FONT_COLOR)
             self.window.blit(setting_text, (10, WINDOW_BASE_HEIGHT / 10 + index * (INSPECTOR_SUBTEXT_SIZE + 5)))
 
     def draw_inspector_tab_0(self, state=0):
@@ -574,9 +588,9 @@ class Engine:
             case 3:
                 font_color = INSPECTOR_TAB_SELECTED_HOVER_TEXT_COLOR
                 tab_color = INSPECTOR_TAB_SELECTED_HOVER_COLOR
-        
+
         self.tab_0 = pygame.draw.rect(self.window, tab_color, (0, 0, self.tab_size, INSPECTOR_TAB_HEIGHT))
-        tab_0_text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_TAB_FONT_SIZE).render("Tab 0", True, font_color)
+        tab_0_text = self.default_main_font.render("Tab 0", True, font_color)
         text_rect = tab_0_text.get_rect(center=self.tab_0.center)
         self.window.blit(tab_0_text, text_rect)
 
@@ -597,9 +611,9 @@ class Engine:
             case 3:
                 font_color = INSPECTOR_TAB_SELECTED_HOVER_TEXT_COLOR
                 tab_color = INSPECTOR_TAB_SELECTED_HOVER_COLOR
-        
+
         self.tab_1 = pygame.draw.rect(self.window, tab_color, (self.tab_size, 0, self.tab_size, INSPECTOR_TAB_HEIGHT))
-        tab_1_text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_TAB_FONT_SIZE).render("Tab 1", True, font_color)
+        tab_1_text = self.default_main_font.render("Tab 1", True, font_color)
         text_rect = tab_1_text.get_rect(center=self.tab_1.center)
         self.window.blit(tab_1_text, text_rect)
 
@@ -622,7 +636,7 @@ class Engine:
                 tab_color = INSPECTOR_TAB_SELECTED_HOVER_COLOR
 
         self.tab_2 = pygame.draw.rect(self.window, tab_color, (self.tab_size*2, 0, self.tab_size, INSPECTOR_TAB_HEIGHT))
-        tab_2_text = pygame.font.SysFont(DEFAULT_FONT, INSPECTOR_TAB_FONT_SIZE).render("Tab 2", True, font_color)
+        tab_2_text = self.default_main_font.render("Tab 2", True, font_color)
         text_rect = tab_2_text.get_rect(center=self.tab_2.center)
         self.window.blit(tab_2_text, text_rect)
 
@@ -731,7 +745,7 @@ class Engine:
                 if much_video_memory > 0:
                     return much_video_memory
 
-        except Exception as e:
+        except Exception as _e:
             print_log("getting video memory", LogType.Error, 1)
 
         return 0
