@@ -1,6 +1,7 @@
 import os
+from unittest import case
 
-from enums import LogType
+from enums import LogType, HardwareCacheType
 
 from logger import print_log
 import logging
@@ -497,7 +498,6 @@ class Engine:
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 3 * (INSPECTOR_SUBTEXT_SIZE + 5)))
 
     def inspector_tab_1(self):
-        start_time = time.perf_counter()
         text = self.default_title_font.render("Analysis", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
 
@@ -536,7 +536,6 @@ class Engine:
             setting_text = self.default_main_font.render(text, True, DEFAULT_FONT_COLOR)
             self.window.blit(setting_text, (10, WINDOW_BASE_HEIGHT / 10 + index * (INSPECTOR_SUBTEXT_SIZE + 5)))
 
-        print(time.perf_counter() - start_time)
 
     def inspector_tab_2(self):
         text = self.default_title_font.render("Settings", True, DEFAULT_FONT_COLOR)
@@ -659,19 +658,18 @@ class Engine:
         print_log("getting hardware data", LogType.Detail, 1)
 
         print_log("getting cpu data", LogType.Detail, 2)
-        self.cpu_count = multiprocessing.cpu_count()
         self.ready_percentage += 7.7
-        self.cpu_cores = subprocess.check_output(["powershell", "-Command", "(Get-CimInstance Win32_Processor).NumberOfCores"], text=True)
+        self.cpu_cores = await self.hardware_getter(HardwareCacheType.ProcessorCores)
         self.ready_percentage += 7.7
-        self.cpu_threads = subprocess.check_output(["powershell", "-Command", "(Get-CimInstance Win32_Processor).NumberOfLogicalProcessors"], text=True)
+        self.cpu_threads = await self.hardware_getter(HardwareCacheType.ProcessorThreads)
         self.ready_percentage += 7.7
-        self.cpu_name = subprocess.check_output(["powershell", "-Command", "(Get-CimInstance Win32_Processor).Name"], text=True)
+        self.cpu_name = await self.hardware_getter(HardwareCacheType.Processor)
         self.ready_percentage += 7.7
 
         print_log("getting system data", LogType.Detail, 2)
-        self.os_name = platform.system()
+        self.os_name = await self.hardware_getter(HardwareCacheType.OperatingSystem)
         self.ready_percentage += 7.7
-        self.os_arch = platform.machine()
+        self.os_arch = await self.hardware_getter(HardwareCacheType.SystemType)
         self.ready_percentage += 7.7
         self.os_version = platform.version()
         self.ready_percentage += 7.7
@@ -692,14 +690,11 @@ class Engine:
         self.gpu_count = len(gpus)
         self.ready_percentage += 7.7
 
-        print_log("finding main gpu", LogType.Detail, 3)
-        gpu = gpus[0]
-
         print_log("getting main gpu data", LogType.Detail, 3)
-        self.gpu_name = gpu.name
+        self.gpu_name = await self.hardware_getter(HardwareCacheType.GpuName)
         self.ready_percentage += 7.7
 
-        self.gpu_total_video_memory = await self.get_gpu_video_memory_async()
+        self.gpu_total_video_memory = await self.hardware_getter(HardwareCacheType.GpuVideoMemory)
         self.ready_percentage += 7.7
 
         self.update_used_video_memory()
@@ -707,48 +702,138 @@ class Engine:
 
         print_log("hardware data got", LogType.Detail, 1)
         self.ready = True
-    
+
+    async def hardware_getter(self, data_type:HardwareCacheType):
+        print_log("locating hardware data cache", LogType.Detail, 2)
+        local_app_data = os.environ["LOCALAPPDATA"]
+        engine_cache = os.path.join(local_app_data, "duck_engine")
+
+        if not os.path.isdir(engine_cache):
+            print_log("cache folder not found, creating", LogType.Detail, 3)
+            os.mkdir(engine_cache)
+
+        if not os.path.exists(engine_cache + "/hardware_data_cache.json"):
+            print_log("cache file not found, creating", LogType.Detail, 3)
+            os.open(engine_cache + "/hardware_data_cache.json", os.O_CREAT)
+            self.create_hardware_data_cache(engine_cache)
+
+        print_log("all right to ready cache", LogType.Detail, 3)
+
+        content = self.read_hardware_data_cache(engine_cache)
+        match data_type:
+            case HardwareCacheType.GpuVideoMemory:
+                return content["gpu_video_memory"]
+            case HardwareCacheType.GpuName:
+                return content["gpu_name"]
+            case HardwareCacheType.GpuChipType:
+                return content["gpu_chip_type"]
+            case HardwareCacheType.RamTotalMemory:
+                return content["ram_total_memory"]
+            case HardwareCacheType.PageFileMemory:
+                return content["page_file_memory"]
+            case HardwareCacheType.OperatingSystem:
+                return content["operating_system"]
+            case HardwareCacheType.Language:
+                return content["language"]
+            case HardwareCacheType.Manufacturer:
+                return content["manufacturer"]
+            case HardwareCacheType.Processor:
+                    return content["processor_name"]
+            case HardwareCacheType.ProcessorClockSpeed:
+                return content["processor_clock_speed"]
+            case HardwareCacheType.ProcessorCores:
+                return content["processor_cores"]
+            case HardwareCacheType.DxVersion:
+                return content["dx_version"]
+            case HardwareCacheType.SystemManufacturer:
+                return content["system_manufacturer"]
+            case HardwareCacheType.SystemModel:
+                return content["system_model"]
+            case HardwareCacheType.SystemType:
+                return content["system_type"]
+
+
     @staticmethod
-    async def get_gpu_video_memory_async():
-        print_log("getting gpu video memory", LogType.Detail, 1)
+    def read_hardware_data_cache(engine_cache):
+        all_data = {}
+
+        file = open(engine_cache + "/hardware_data_cache.json", "r")
+        content = file.read()
+        file.close()
+
+        print_log("reading all data", LogType.Detail, 3)
+        memory_mb = re.findall(r"<DedicatedMemory>(.*?)</DedicatedMemory>", content)
+
+        print_log("finding correct memory value", LogType.Detail, 2)
+        much_video_memory = 0
+
+        print(memory_mb)
+        for mem_text in memory_mb:
+            numbers = "".join(filter(str.isdigit, mem_text))
+            if numbers:
+                video_memory = round(int(numbers) / 1024)
+                if video_memory > much_video_memory:
+                    much_video_memory = video_memory
+
+        all_data["gpu_video_memory"] = 0
+
+        print_log("verifying memory value", LogType.Detail, 2)
+        if much_video_memory > 0:
+            all_data["gpu_video_memory"] = much_video_memory
+
+        all_data["gpu_name"] = re.findall(r"<CardName>(.*?)</CardName>", content)[0]
+        all_data["gpu_chip_type"] = re.findall(r"<ChipType>(.*?)</ChipType>", content)[0]
+        all_data["ram_total_memory"] = re.findall(r"<Memory>(.*?)</Memory>", content)[0]
+        all_data["page_file_memory"] = re.findall(r"<PageFile>(.*?)</PageFile>", content)[0]
+        all_data["operating_system"] = re.findall(r"<OperatingSystem>(.*?)</OperatingSystem>", content)[0]
+        all_data["system_manufacturer"] = re.findall(r"<SystemManufacturer>(.*?)</SystemManufacturer>", content)[0]
+        all_data["system_model"] = re.findall(r"<SystemModel>(.*?)</SystemModel>", content)[0]
+
+        is_64b = re.findall(r"<DxDiag64Bit>(.*?)</DxDiag64Bit>", content)[0]
+        if is_64b == "1":
+            all_data["system_type"] = "x64"
+        else:
+            all_data["system_type"] = "x32"
+
+        all_data["language"] = re.findall(r"<Language>(.*?)</Language>", content)[0]
+        all_data["dx_version"] = re.findall(r"<DirectXVersion>(.*?)</DirectXVersion>", content)[0]
+
+        processor = re.findall(r"<Processor>(.*?)</Processor>", content)[0]
+        cpus = re.findall(r"\((\d+) CPUs\)", processor)[0]
+        all_data["processor_name"] = re.findall(r"<Processor>(.*?) \(\d+ CPUs\)", content)[0]
+        all_data["processor_cores"] = cpus
+        all_data["processor_clock_speed"] = re.findall(r"~([\d.]+)GHz", content)[0]
+        all_data["manufacturer"] = re.findall(r"<Manufacturer>(.*?)</Manufacturer>", content)[0]
+
+        return all_data
+
+    @staticmethod
+    def create_hardware_data_cache(engine_cache):
+        file = open(engine_cache + "/hardware_data_cache.json", "w+")
         try:
-            print_log("creating temp file", LogType.Detail, 2)
+            print_log("creating temp file", LogType.Detail, 4)
             temp_file = os.path.join(os.environ["TEMP"], "dx_vram_report.xml")
 
-            print_log("creating subprocess", LogType.Detail, 2)
+            print_log("creating subprocess", LogType.Detail, 4)
             subprocess.run(["dxdiag", "/x", temp_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                        check=True)
+                           check=True)
 
-            print_log("verifying temp files as generated", LogType.Detail, 2)
+            print_log("verifying temp files as generated", LogType.Detail, 4)
             if os.path.exists(temp_file):
-
-                print_log("trying to open temp file", LogType.Detail, 2)
+                print_log("trying to open temp file", LogType.Detail, 4)
                 with open(temp_file, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
 
-                print_log("deleting temp file", LogType.Detail, 2)
+                print_log("deleting temp file", LogType.Detail, 4)
                 os.remove(temp_file)
 
-                print_log("getting all possible memories", LogType.Detail, 2)
-                memory_mb = re.findall(r"<DedicatedMemory>(.*?)</DedicatedMemory>", content)
-
-                print_log("finding correct memory value", LogType.Detail, 2)
-                much_video_memory = 0
-                for mem_text in memory_mb:
-                    numbers = "".join(filter(str.isdigit, mem_text))
-                    if numbers:
-                        video_memory = round(int(numbers) / 1024)
-                        if video_memory > much_video_memory:
-                            much_video_memory = video_memory
-                
-                print_log("verifying memory value", LogType.Detail, 2)
-                if much_video_memory > 0:
-                    return much_video_memory
-
+                print_log("writing hardware cache", LogType.Detail, 4)
+                file.write(content)
+                file.close()
         except Exception as _e:
-            print_log("getting video memory", LogType.Error, 1)
+            print_log("error creating hardware cache", LogType.Error, 3)
 
-        return 0
+
 
 
 if __name__ == "__main__":
