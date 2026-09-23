@@ -16,7 +16,6 @@ from settings import *
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
-import multiprocessing
 import pygame
 import threading
 import platform
@@ -52,7 +51,7 @@ class NodesDisplay:
 
         self.color = (30, 30, 30)
 
-        self.position = pygame.math.Vector2(0, 0)
+        self.position = pygame.math.Vector2(0, 0)  
         self.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH-20, INSPECTOR_LEFT_PANEL_WIDTH-20)
         self.node_size = pygame.math.Vector2((self.size.x/3)-10, (self.size.y/3)-10)
 
@@ -751,7 +750,7 @@ class Engine:
                 return content["system_model"]
             case HardwareCacheType.SystemType:
                 return content["system_type"]
-
+        return None
 
     @staticmethod
     def read_hardware_data_cache(engine_cache):

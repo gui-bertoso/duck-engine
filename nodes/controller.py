@@ -5,7 +5,9 @@ from settings import TOP_LIMIT, BOTTOM_LIMIT, LEFT_LIMIT, RIGHT_LIMIT
 
 
 class Controller:
-    def __init__(self, best_weights=[]):
+    def __init__(self, best_weights=None):
+        if best_weights is None:
+            best_weights = []
         self.parent = None
 
         self.weights = []
@@ -19,13 +21,13 @@ class Controller:
 
         self.processed_inputs = []
 
-        self.hiddens_one = []
-        self.hiddens_two = []
+        self.hidden_one = []
+        self.hidden_two = []
 
         self.output0 = 0
         self.output1 = 0
 
-        self.hiddens_per_layer = 4
+        self.hidden_per_layer = 4
 
         self.weights_quantity = 100
 
@@ -44,8 +46,8 @@ class Controller:
     def update(self):
         self.processed_inputs.clear()
         self.inputs.clear()
-        self.hiddens_one.clear()
-        self.hiddens_two.clear()
+        self.hidden_one.clear()
+        self.hidden_two.clear()
 
         current_w = 0
 
@@ -64,27 +66,27 @@ class Controller:
         self.inputs.append(LEFT_LIMIT)
         self.inputs.append(RIGHT_LIMIT)
 
-        for i in range(self.hiddens_per_layer):
+        for i in range(self.hidden_per_layer):
             v = 0
             for tv in self.inputs:
                 v += tv * self.weights[current_w]
                 current_w += 1
-            self.hiddens_one.append(v * self.bias)
+            self.hidden_one.append(v * self.bias)
 
-        for i in range(self.hiddens_per_layer):
+        for i in range(self.hidden_per_layer):
             v = 0
-            for tv in self.hiddens_one:
+            for tv in self.hidden_one:
                 v += tv * self.weights[current_w]
                 current_w += 1
-            self.hiddens_two.append(v * self.bias)
+            self.hidden_two.append(v * self.bias)
 
-        if round(self.hiddens_two[0]) > 0:
+        if round(self.hidden_two[0]) > 0:
             self.parent.position.x += self.parent.speed
-        if round(self.hiddens_two[1]) > 0:
+        if round(self.hidden_two[1]) > 0:
             self.parent.position.x -= self.parent.speed
-        if round(self.hiddens_two[2]) > 0:
+        if round(self.hidden_two[2]) > 0:
             self.parent.position.y += self.parent.speed
-        if round(self.hiddens_two[3]) > 0:
+        if round(self.hidden_two[3]) > 0:
             self.parent.position.y -= self.parent.speed
 
 

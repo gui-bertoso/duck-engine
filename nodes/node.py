@@ -21,5 +21,5 @@ class Node(EmptyNode):
     def icon_draw(self):
         for child in self.children:
             child.icon_draw()
-        if self.window != None:
+        if self.window is not None:
             self.window.blit(self.icon, self.position)
