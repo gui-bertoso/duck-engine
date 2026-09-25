@@ -1,7 +1,10 @@
 import random
 import sys
 
+import pygame
+
 from old.mainv2 import TOP_LIMIT, LEFT_LIMIT, BOTTOM_LIMIT, RIGHT_LIMIT
+from settings import NONE_ICON_PATH
 
 
 class TargetController:
@@ -24,6 +27,8 @@ class TargetController:
 
         self.output0 = 0
         self.output1 = 0
+
+        self.icon = pygame.image.load(NONE_ICON_PATH)
 
         self.hiddens_per_layer = 4
 

@@ -3,7 +3,7 @@ import sys
 import pygame
 
 from nodes.node import Node
-from settings import NONE_ICON_PATH
+from settings import GRAPH_ICON_PATH
 
 
 class GraphNode(Node):
@@ -15,7 +15,7 @@ class GraphNode(Node):
 
         self.line_color = (255, 255, 255)
         self.ram_usage_kb = sys.getsizeof(self) / 1024
-        self.icon = pygame.image.load(NONE_ICON_PATH)
+        self.icon = pygame.image.load(GRAPH_ICON_PATH)
 
     def add_value(self, value):
         self.values.append(value)

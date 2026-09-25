@@ -1,6 +1,7 @@
 import sys
 import pygame
 from nodes.node import Node
+from settings import LOADING_ICON_PATH
 
 
 class LoadingBar(Node):
@@ -13,6 +14,7 @@ class LoadingBar(Node):
         self.base_color = (50, 50, 50)
         self.fill_color = (150, 150, 150)
         self.ram_usage_kb = sys.getsizeof(self) / 1024
+        self.icon = pygame.image.load(LOADING_ICON_PATH)
 
     def draw(self):
         percentage = self.value / self.max_value

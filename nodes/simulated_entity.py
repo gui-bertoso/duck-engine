@@ -6,14 +6,17 @@ from nodes.controller import Controller
 from nodes.entity import Entity
 from nodes.sprite import Sprite
 
+from settings import SIMULATED_ENTITY_ICON_PATH
+
 
 class SimulatedEntity(Entity):
-    def __init__(self, target=None, window=None, best_weights=[]):
-        Entity.__init__(self, window)
+    def __init__(self):
+        Entity.__init__(self)
         self.sprite = Sprite()
-        self.target_reference = target
-        self.controller = Controller(best_weights)
+        self.target_reference = None
+        self.controller = Controller()
         self.controller.parent = self
+        self.icon = pygame.image.load(SIMULATED_ENTITY_ICON_PATH)
     def update(self):
         self.controller.update()
     def draw(self):

@@ -1,5 +1,4 @@
 import os
-from unittest import case
 
 from enums import LogType, HardwareCacheType
 
@@ -208,12 +207,18 @@ class Engine:
         self.can_resize_inspector_left_panel = False
 
         self.nodes = [
-            Node,
-            Target,
+            Controller,
+            EmptyNode,
             Entity,
-            Sprite,
-            LoadingBar,
             GraphNode,
+            LoadingBar,
+            Node,
+            Rect,
+            RootNode,
+            SimulatedEntity,
+            Sprite,
+            Target,
+            TargetController,
         ]
 
         self.nodes_display = None

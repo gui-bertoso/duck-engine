@@ -3,6 +3,12 @@ EMPTY_NODE_ICON_PATH = "node_icons/empty_node.png"
 NONE_ICON_PATH = "node_icons/none.png"
 NODE_ICON_PATH = "node_icons/node.png"
 ROOT_ICON_PATH = "node_icons/root.png"
+CONTROLLER_ICON_PATH = "node_icons/controller.png"
+ENTITY_ICON_PATH = "node_icons/entity.png"
+GRAPH_ICON_PATH = "node_icons/graph_node.png"
+SIMULATED_ENTITY_ICON_PATH = "node_icons/simulated_entity.png"
+RECT_ICON_PATH = "node_icons/rect.png"
+LOADING_ICON_PATH = "node_icons/loading_bar.png"
 
 DEFAULT_FONT = "Arial"
 
@@ -37,7 +43,6 @@ UPDATE_RATE = 1000
 
 VSYNC_ENABLED = False
 DEFAULT_DISPLAY = 0
-
 
 TOP_LIMIT = 0
 BOTTOM_LIMIT = 720

@@ -1,7 +1,9 @@
 import random
 import sys
 
-from settings import TOP_LIMIT, BOTTOM_LIMIT, LEFT_LIMIT, RIGHT_LIMIT
+import pygame
+
+from settings import TOP_LIMIT, BOTTOM_LIMIT, LEFT_LIMIT, RIGHT_LIMIT, CONTROLLER_ICON_PATH
 
 
 class Controller:
@@ -41,6 +43,8 @@ class Controller:
                 self.weights.append(best_weights[i] + random.randint(-10, 10))
         self.ram_usage_kb = sys.getsizeof(self) / 1024
         print(f"         [+] node ram usage -> {self.ram_usage_kb} KB")
+
+        self.icon = pygame.image.load(CONTROLLER_ICON_PATH)
 
 
     def update(self):

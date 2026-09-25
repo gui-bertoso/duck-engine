@@ -1,6 +1,5 @@
 from nodes.empty_node import EmptyNode
 import pygame
-import sys
 
 from settings import NODE_ICON_PATH
 
