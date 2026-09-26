@@ -10,3 +10,5 @@ from .sprite import Sprite
 from .target import Target
 from .target_controller import TargetController
 from .rect import Rect
+from .nodes_display import NodesDisplay
+from .nodes_display_node import NodesDisplayNode

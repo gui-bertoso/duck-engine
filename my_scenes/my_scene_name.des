@@ -1,0 +1,13 @@
+FILETYPE SCENE
+
+scene_name -> my_scene_name
+scene_version -> my_scene_version
+scene_id -> my_scene_id
+
+childs -> {
+    node -> {
+        name -> 
+        id -> 96746112644972
+        node -> RootNode
+    }
+}

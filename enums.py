@@ -15,6 +15,14 @@ class LogType(enum.Enum):
     Core = 5
 
 
+class SceneLoadState(enum.Enum):
+    PathIsNotScene = 1
+    PathIsNotFound = 2
+    SuccessfulLoaded = 3
+    UnknownError = 4
+    PathIsNone = 5
+
+
 class HardwareCacheType(enum.Enum):
     GpuVideoMemory = 0
     GpuName = 1

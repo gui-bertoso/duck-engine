@@ -22,3 +22,18 @@ class Node(EmptyNode):
             child.icon_draw()
         if self.window is not None:
             self.window.blit(self.icon, self.position)
+    def serialize_node(self, depth=0)->str:
+        indent = "    " * depth
+
+        result = (
+            f"{indent}node -> \n"
+            f"{indent}    name -> {self.name}\n"
+            f"{indent}    id -> {self.id}\n"
+            f"{indent}    node -> {self.__class__}\n"
+        )
+
+        for child in self.children:
+            result += child.serialize_node(depth + 1)
+
+        result += f"{indent}}}\n"
+        return result

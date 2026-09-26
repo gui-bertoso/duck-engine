@@ -1,6 +1,6 @@
 import os
 
-from enums import LogType, HardwareCacheType
+from enums import LogType, HardwareCacheType, SceneLoadState
 
 from logger import print_log
 import logging
@@ -37,115 +37,6 @@ RUNTIME_NODE_ICONS_DRAW_TIME = 0.0
 RUNTIME_INSPECTOR_TIME = 0.0
 
 INSPECTOR_LEFT_PANEL_WIDTH = 400
-
-class NodesDisplay:
-    def __init__(self, rect):
-        global INSPECTOR_LEFT_PANEL_WIDTH
-
-        self.nodes = []
-        self.scroll_y = 0
-        self.window = None
-        self.rect = rect
-        self.click_event = None
-
-        self.color = (30, 30, 30)
-
-        self.position = pygame.math.Vector2(0, 0)  
-        self.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH-20, INSPECTOR_LEFT_PANEL_WIDTH-20)
-        self.node_size = pygame.math.Vector2((self.size.x/3)-10, (self.size.y/3)-10)
-
-    def render(self):
-        self.click_event.clear()
-        for ev in pygame.event.get():
-            if ev.type == pygame.MOUSEBUTTONDOWN:
-                self.click_event.set()
-        pygame.draw.rect(self.window, self.color, self.rect)
-        for i in self.nodes:
-            i.click_event = self.click_event
-            i.render()
-
-            
-    def add_node(self, _node:NodesDisplayNode):
-        i = len(self.nodes)
-        column = i % 3
-        row = i // 3
-
-        x = self.rect.left + (column * self.node_size.x) + 2.5
-        y = self.rect.top + (row * self.node_size.y) + 2.5
-
-        _node.position.x = x
-        _node.position.y = y
-
-        _node.window = self.window
-
-        self.nodes.append(_node)
-
-        print_log("new node added to nodes display", LogType.Info, 1)
-        print_log(f"nodes list : {self.nodes}", LogType.Detail, 2)
-
-class NodesDisplayNode:
-    def __init__(self):
-        self.name = ""
-        self.description = ""
-        self.icon = None
-        self.node = None
-        self.click_event = None
-        self.position = pygame.math.Vector2(0, 0)
-        self.size = pygame.math.Vector2(((INSPECTOR_LEFT_PANEL_WIDTH-20)/3)-10, ((INSPECTOR_LEFT_PANEL_WIDTH-20)/3)-10)
-        self.base_color = (90, 90, 0)
-        self.hover_color = (120, 120, 0)
-        self.click_color = (60, 60, 250)
-        self.rect = None
-        self.parent = None
-        self.font = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_MAIN_FONT_SIZE)
-        self.window = None
-        self.is_preview_only = False
-
-    def render(self):
-        if self.is_preview_only:
-            self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
-            pygame.draw.rect(self.window, self.base_color, self.rect)
-
-            text = self.font.render(self.name, True, (255, 255, 255))
-            text_rect = text.get_rect(center=self.rect.center)
-            self.window.blit(text, text_rect)
-        else:
-
-            self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
-            
-            color = self.base_color
-
-            if self.rect.collidepoint(pygame.mouse.get_pos()):
-                if self.click_event.is_set():
-                    color = self.click_color
-
-                    t_node = self.get_copy()
-                    t_node.is_preview_only = True
-                    self.parent.inspector_selected_node = t_node
-
-                    print_log("node clicked", LogType.Detail, 3)
-                else:
-                    color = self.hover_color
-
-            pygame.draw.rect(self.window, color, self.rect)
-
-            text = self.font.render(self.name, True, (255, 255, 255))
-            text_rect = text.get_rect(center=self.rect.center)
-            self.window.blit(text, text_rect)
-
-    def get_copy(self):
-        copy = NodesDisplayNode()
-        copy.name = self.name
-        copy.icon = self.icon
-        copy.description = self.description
-        copy.node = self.node
-        copy.rect = self.rect
-        copy.position = self.position
-        copy.window = self.window
-        copy.parent = self.parent
-        return copy
-
-
 
 
 
@@ -251,6 +142,13 @@ class Engine:
         self.ready_percentage = 0
 
 
+
+        self.is_loading_scene = False
+        self.current_scene = None
+
+
+
+
         print_log(f"creating default fonts", LogType.Detail, 1)
         self.default_main_font = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_MAIN_FONT_SIZE)
         self.default_title_font = pygame.font.SysFont(DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE)
@@ -262,6 +160,37 @@ class Engine:
 
         print_log(f"starting loading screen", LogType.Detail, 1)
         self.loading_screen()
+
+
+
+    def load_scene(self, scene_path) -> SceneLoadState:
+        if scene_path is None:
+            return SceneLoadState.PathIsNone
+        if not scene_path.endswith(SCENE_EXTENSION):
+            return SceneLoadState.PathIsNotScene
+
+
+
+        return SceneLoadState.UnknownError
+
+
+
+    def save_scene(self, scene_path):
+        pass
+
+    def create_scene(self, scene:Scene):
+        scene_name = scene.scene_name
+        scene_version = scene.scene_version
+        scene_id = scene.scene_id
+
+        file_template = f"FILETYPE SCENE\n\nscene_name -> {scene_name}\nscene_version -> {scene_version}\nscene_id -> {scene_id}"
+
+        t_file = open(file_template, "w")
+        t_file.write(file_template)
+        t_file.close()
+
+    def quicksave_scene(self):
+        pass
 
 
     def loading_screen(self):
