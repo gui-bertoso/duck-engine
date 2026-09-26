@@ -10,5 +10,3 @@ class EmptyNode:
         self.id = random.randint(0, 99999999999999)
         self.name = ""
         self.icon = pygame.image.load(EMPTY_NODE_ICON_PATH)
-
-

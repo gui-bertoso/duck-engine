@@ -3,7 +3,6 @@ import pygame
 
 from settings import NODE_ICON_PATH
 
-
 class Node(EmptyNode):
     def __init__(self):
         EmptyNode.__init__(self)
@@ -26,10 +25,10 @@ class Node(EmptyNode):
         indent = "    " * depth
 
         result = (
-            f"{indent}node -> \n"
+            f"{indent}node -> " + "{\n"
             f"{indent}    name -> {self.name}\n"
             f"{indent}    id -> {self.id}\n"
-            f"{indent}    node -> {self.__class__}\n"
+            f"{indent}    node -> {self.__class__.__name__}\n"
         )
 
         for child in self.children:

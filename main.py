@@ -1,17 +1,15 @@
 import os
 
-from enums import LogType, HardwareCacheType, SceneLoadState
+from enums import *
 
-from logger import print_log
+from logger import *
 import logging
-
-from scene import Scene
 
 logging.basicConfig(level=logging.FATAL)
 
 from nodes import *
-
 from settings import *
+from scene import *
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
@@ -39,7 +37,6 @@ RUNTIME_INSPECTOR_TIME = 0.0
 INSPECTOR_LEFT_PANEL_WIDTH = 400
 
 
-
 class Engine:
     def __init__(self):
 
@@ -62,10 +59,6 @@ class Engine:
         print_log(f"creating events", LogType.Detail, 1)
         self.close_event = threading.Event()
         self.click_event = threading.Event()
-
-
-        print_log(f"creating main scene", LogType.Detail, 1)
-        self.scene = Scene()
 
 
         print_log(f"creating inspector variables", LogType.Detail, 1)
@@ -116,6 +109,8 @@ class Engine:
 
         self.sub_runtime_0_thread = None
 
+        self.inspector_max_right_width = INSPECTOR_LEFT_PANEL_WIDTH * 2
+
 
         print_log(f"creating hardware variables", LogType.Detail, 1)
         self.cpu_count = 0
@@ -142,11 +137,7 @@ class Engine:
         self.ready_percentage = 0
 
 
-
-        self.is_loading_scene = False
         self.current_scene = None
-
-
 
 
         print_log(f"creating default fonts", LogType.Detail, 1)
@@ -163,34 +154,72 @@ class Engine:
 
 
 
-    def load_scene(self, scene_path) -> SceneLoadState:
-        if scene_path is None:
-            return SceneLoadState.PathIsNone
-        if not scene_path.endswith(SCENE_EXTENSION):
-            return SceneLoadState.PathIsNotScene
 
 
 
-        return SceneLoadState.UnknownError
 
 
-
-    def save_scene(self, scene_path):
-        pass
-
-    def create_scene(self, scene:Scene):
-        scene_name = scene.scene_name
-        scene_version = scene.scene_version
-        scene_id = scene.scene_id
+    @staticmethod
+    def create_scene(_scene: Scene):
+        scene_name = _scene.scene_name
+        scene_version = _scene.scene_version
+        scene_id = _scene.scene_id
 
         file_template = f"FILETYPE SCENE\n\nscene_name -> {scene_name}\nscene_version -> {scene_version}\nscene_id -> {scene_id}"
+        file_template += "\n\nchildren -> {\n"
+        for child in _scene.nodes:
+            file_template += child.serialize_node(1)
 
-        t_file = open(file_template, "w")
+        file_template += "}"
+
+        t_file = open(SCENES_FOLDER_PATH + scene_name + SCENE_EXTENSION, "w+")
         t_file.write(file_template)
         t_file.close()
 
-    def quicksave_scene(self):
-        pass
+    @staticmethod
+    def load_scene(scene_path):
+        if not scene_path:
+            return [SceneLoadState.PathIsNone, None]
+        if not scene_path.endswith(SCENE_EXTENSION):
+            return [SceneLoadState.PathIsNotScene, None]
+        if not os.path.exists(scene_path):
+            return [SceneLoadState.PathIsNotFound, None]
+
+        file = open(scene_path, "r")
+        brute_data = file.read()
+        print(brute_data)
+
+        extracted_datas = {}
+
+        for line in brute_data.split("\n"):
+            match = re.match(SCENE_DATA_GETTER_REGEX, line)
+            if match:
+                extracted_datas[match.group(1)] = match.group(2)
+
+        print(extracted_datas)
+
+        loaded_scene = Scene()
+        try:
+            loaded_scene.scene_name = extracted_datas["scene_name"]
+        except KeyError:
+            loaded_scene.scene_name = "NotFound"
+        try:
+            loaded_scene.scene_version = extracted_datas["scene_version"]
+        except KeyError:
+            loaded_scene.scene_version = "NotFound"
+        try:
+            loaded_scene.scene_id = extracted_datas["scene_id"]
+        except KeyError:
+            loaded_scene.scene_id = "NotFound"
+
+        print(loaded_scene)
+        return [SceneLoadState.SuccessfulLoaded, loaded_scene]
+
+
+
+
+
+
 
 
     def loading_screen(self):
@@ -281,7 +310,8 @@ class Engine:
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                         if self.inspector_right_width is not None and event.pos is not None and abs(event.pos[0] - self.inspector_right_width) <= 5:
                             self.resizing_right_inspector_left_panel = True
-                    elif self.inspector_right_width is not None and event.pos is not None and event.type == pygame.MOUSEMOTION and self.resizing_right_inspector_left_panel:
+                    elif self.inspector_right_width is not None and event.pos is not None and event.pos[0] is not None and self.inspector_max_right_width is not None and event.type == pygame.MOUSEMOTION and self.resizing_right_inspector_left_panel:
+
                         self.inspector_right_width = max(self.inspector_min_right_width, min(event.pos[0], self.inspector_max_right_width))
 
                         INSPECTOR_LEFT_PANEL_WIDTH = self.inspector_right_width
@@ -294,13 +324,20 @@ class Engine:
             RUNTIME_EVENT_PROCESS_TIME = time.perf_counter() - start_time
             self.window.fill(BACKGROUND_COLOR)
 
-            start_time = time.perf_counter()
-            self.scene.root_node.update()
-            RUNTIME_NODES_UPDATE_TIME = time.perf_counter() - start_time
+            if self.current_scene != None:
+                start_time = time.perf_counter()
+                self.current_scene.root_node.update()
+                RUNTIME_NODES_UPDATE_TIME = time.perf_counter() - start_time
 
-            start_time = time.perf_counter()
-            self.scene.root_node.icon_draw()
-            RUNTIME_NODE_ICONS_DRAW_TIME = time.perf_counter() - start_time
+                start_time = time.perf_counter()
+                self.current_scene.root_node.icon_draw()
+                RUNTIME_NODE_ICONS_DRAW_TIME = time.perf_counter() - start_time
+
+                RUNTIME_NODES_UPDATE_TIME = "SceneNotLoaded"
+                RUNTIME_NODE_ICONS_DRAW_TIME = "SceneNotLoaded"
+
+                text = self.default_main_font.render("SCENE NOT LOADED", True, DEFAULT_FONT_COLOR)
+                self.window.blit(text, (WINDOW_BASE_WIDTH-INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT))
 
             start_time = time.perf_counter()
             self.inspector()
@@ -410,7 +447,7 @@ class Engine:
                 n_node = self.inspector_selected_node.get_copy().node()
                 n_node.window = self.window
                 n_node.position = pygame.mouse.get_pos()
-                self.scene.add_node(n_node)
+                self.current_scene.add_node(n_node)
 
     def inspector_tab_0(self):
         text = self.default_title_font.render("Controls", True, DEFAULT_FONT_COLOR)
@@ -418,17 +455,37 @@ class Engine:
 
         self.nodes_display.render()
 
-        text = self.default_main_font.render(f"Current Scene: {self.scene}", True, DEFAULT_FONT_COLOR)
+        text = self.default_main_font.render(f"Current Scene: {self.current_scene}", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 0 * (INSPECTOR_SUBTEXT_SIZE + 5)))
         text = self.default_main_font.render(f"Selected Node: {self.inspector_selected_node}", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 1 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-        text = self.default_main_font.render(f"NODES IN SCENE: {len(self.scene.root_node.children)}", True, DEFAULT_FONT_COLOR)
+        text = self.default_main_font.render(f"NODES IN SCENE: {len(self.current_scene.root_node.children) if self.current_scene is not None else "None"}", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 2 * (INSPECTOR_SUBTEXT_SIZE + 5)))
         text_str = self.inspector_selected_node
         if self.inspector_selected_node is not None:
             text_str = float(pympler.asizeof.asizesof(self.inspector_selected_node.node())[0]) / 1024**2
         text = self.default_main_font.render(f"Selected Node Memory Usage: {text_str}MB", True, DEFAULT_FONT_COLOR)
         self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 3 * (INSPECTOR_SUBTEXT_SIZE + 5)))
+
+
+
+
+
+        rect = pygame.Rect(0, WINDOW_BASE_HEIGHT-40, INSPECTOR_LEFT_PANEL_WIDTH/2, 40)
+        pygame.draw.rect(self.window, (255, 0, 0), rect)
+        text = self.default_main_font.render("SAVE/CREATE", True, DEFAULT_FONT_COLOR)
+        self.window.blit(text, rect.center)
+        rect = pygame.Rect(INSPECTOR_LEFT_PANEL_WIDTH/2, WINDOW_BASE_HEIGHT-40, INSPECTOR_LEFT_PANEL_WIDTH/2, 40)
+
+        pygame.draw.rect(self.window, (150, 0, 0), rect)
+        text = self.default_main_font.render("LOAD", True, DEFAULT_FONT_COLOR)
+        self.window.blit(text, rect.center)
+
+
+
+
+
+
 
     def inspector_tab_1(self):
         text = self.default_title_font.render("Analysis", True, DEFAULT_FONT_COLOR)
@@ -770,10 +827,4 @@ class Engine:
 
 
 if __name__ == "__main__":
-    print_log("starting engine", LogType.Core, 0)
-    try:
-        engine = Engine()
-        print_log("quitting engine", LogType.Core, 0)
-    except Exception as e:
-        print_log("error starting engine", LogType.Core, 0)
-        print_log(f"{e}", LogType.Error, 1)
+    engine = Engine()

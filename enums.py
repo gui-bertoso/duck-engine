@@ -23,6 +23,12 @@ class SceneLoadState(enum.Enum):
     PathIsNone = 5
 
 
+class ButtonState(enum.Enum):
+    Clicked = 2
+    Hovered = 1
+    Standard = 0
+    Disabled = 3
+
 class HardwareCacheType(enum.Enum):
     GpuVideoMemory = 0
     GpuName = 1

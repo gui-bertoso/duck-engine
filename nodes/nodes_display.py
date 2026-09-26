@@ -4,6 +4,8 @@ from enums import LogType
 from logger import print_log
 from nodes.nodes_display_node import NodesDisplayNode
 
+from main import INSPECTOR_LEFT_PANEL_WIDTH
+
 
 class NodesDisplay:
     def __init__(self, rect):
