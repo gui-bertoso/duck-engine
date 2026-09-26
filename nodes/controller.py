@@ -108,5 +108,5 @@ class Controller:
         self.pontuation += 0.01
 
 
-    def draw(self):
+    def render(self):
         pass

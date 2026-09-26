@@ -8,11 +8,13 @@ from settings import ENTITY_ICON_PATH
 
 class Entity(Node):
     def __init__(self):
-        Node.__init__(self)
+        super().__init__()
         self.velocity = pygame.math.Vector2(0, 0)
         self.speed = 2
         self.icon = pygame.image.load(ENTITY_ICON_PATH)
-    def draw(self):
+
+    def render(self):
         pass
+
     def update(self):
         pass

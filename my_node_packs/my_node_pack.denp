@@ -1,0 +1,19 @@
+FILETYPE NODEPACK
+
+nodes -> {
+    node -> {
+        name -> Background
+        id -> 87961278612
+        position -> (0, 0)
+        size -> (1280, 720)
+        color -> (100, 100, 100)
+        node -> Rect
+        children -> {
+            node -> {
+                name -> Background
+                id -> 87961278612
+                node -> Rect
+            }
+        }
+    }
+}

@@ -9,12 +9,15 @@ class Sprite(Node):
         super().__init__()
         self.texture = None
         self.icon = pygame.image.load(NONE_ICON_PATH)
+
     def update(self):
         pass
-    def draw(self):
+
+    def render(self):
         pass
 
     def set_texture(self, path):
         self.texture = pygame.image.load(path)
+
     def set_alpha(self, alpha):
         self.texture.set_alpha(alpha)

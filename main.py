@@ -130,7 +130,11 @@ class Engine:
         self.used_memory_amount = 0
         
         self.hardware_data_getter_thread = threading.Thread(target=self.get_hardware_data, daemon=True)
-        
+
+        self.inspector_tab_0_nodes_pack = None
+        self.inspector_tab_1_nodes_pack = None
+        self.inspector_tab_2_nodes_pack = None
+
 
         print_log(f"creating loading screen variables", LogType.Detail, 1)
         self.ready = False
@@ -155,6 +159,26 @@ class Engine:
 
 
 
+
+    def create_scene_packs(self):
+        self.inspector_tab_0_nodes_pack = NodePack()
+
+        mr = Rect()
+        mr.window = self.window
+        mr.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT)
+        mr.color = pygame.Color(100, 100, 100)
+
+        self.inspector_tab_0_nodes_pack.add_node(mr)
+
+
+
+
+
+
+
+
+        self.inspector_tab_1_nodes_pack = NodePack()
+        self.inspector_tab_2_nodes_pack = NodePack()
 
 
 
@@ -253,6 +277,8 @@ class Engine:
 
     def start(self):
         self.window = pygame.display.set_mode((WINDOW_BASE_WIDTH, WINDOW_BASE_HEIGHT), vsync=VSYNC_ENABLED, display=DEFAULT_DISPLAY)
+
+        self.create_scene_packs()
 
         print_log(f"starting sub runtime 0", LogType.Detail, 1)
         self.sub_runtime_0_thread = threading.Thread(target=self.sub_runtime_0)
@@ -368,122 +394,10 @@ class Engine:
 
 
     def inspector(self):
-        pygame.draw.rect(self.window, (50, 50, 50), (0, 0, INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT))
-        self.left_panel_divisor = pygame.draw.rect(self.window, (255, 20, 20), (INSPECTOR_LEFT_PANEL_WIDTH, 0, 4, WINDOW_BASE_HEIGHT))
-
-        if self.left_panel_divisor.collidepoint(pygame.mouse.get_pos()):
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_SIZEWE)
-            self.can_resize_inspector_left_panel = True
-        else:
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-            self.can_resize_inspector_left_panel = False
-            if self.resizing_right_inspector_left_panel:
-                self.resizing_right_inspector_left_panel = False
-
-        if self.current_inspector_tab == 0:
-            self.draw_inspector_tab_0(2)
-        else:
-            self.draw_inspector_tab_0(0)
-
-        if self.current_inspector_tab == 1:
-            self.draw_inspector_tab_1(2)
-        else:
-            self.draw_inspector_tab_1(0)
-
-        if self.current_inspector_tab == 2:
-            self.draw_inspector_tab_2(2)
-        else:
-            self.draw_inspector_tab_2(0)
-
-        if self.tab_0.collidepoint(pygame.mouse.get_pos()):
-            if self.click_event.is_set():
-                self.current_inspector_tab = 0
-                self.inspector_selected_node = None
-                self.draw_inspector_tab_0(2)
-                print_log("inspector tab 0 selected", LogType.Detail, 1)
-            else:
-                if self.current_inspector_tab == 0:
-                    self.draw_inspector_tab_0(3)
-                else:
-                    self.draw_inspector_tab_0(1)
-
-        if self.tab_1.collidepoint(pygame.mouse.get_pos()):
-            if self.click_event.is_set():
-                self.current_inspector_tab = 1
-                self.inspector_selected_node = None
-                self.draw_inspector_tab_1(2)
-                print_log("inspector tab 1 selected", LogType.Detail, 1)
-            else:
-                if self.current_inspector_tab == 1:
-                    self.draw_inspector_tab_1(3)
-                else:
-                    self.draw_inspector_tab_1(1)
-
-        if self.tab_2.collidepoint(pygame.mouse.get_pos()):
-            if self.click_event.is_set():
-                self.current_inspector_tab = 2
-                self.inspector_selected_node = None
-                self.draw_inspector_tab_2(2)
-                print_log("inspector tab 2 selected", LogType.Detail, 1)
-            else:
-                if self.current_inspector_tab == 2:
-                    self.draw_inspector_tab_2(3)
-                else:
-                    self.draw_inspector_tab_2(1)
-
-        match self.current_inspector_tab:
-            case 0:
-                self.inspector_tab_0()
-            case 1:
-                self.inspector_tab_1()
-            case 2:
-                self.inspector_tab_2()
-
-        if self.inspector_selected_node is not None:
-            self.inspector_selected_node.position = pygame.math.Vector2(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1])
-            self.inspector_selected_node.render()
-
-            if self.click_event.is_set():
-                n_node = self.inspector_selected_node.get_copy().node()
-                n_node.window = self.window
-                n_node.position = pygame.mouse.get_pos()
-                self.current_scene.add_node(n_node)
+        self.inspector_tab_0_nodes_pack.render()
 
     def inspector_tab_0(self):
-        text = self.default_title_font.render("Controls", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
-
-        self.nodes_display.render()
-
-        text = self.default_main_font.render(f"Current Scene: {self.current_scene}", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 0 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-        text = self.default_main_font.render(f"Selected Node: {self.inspector_selected_node}", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 1 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-        text = self.default_main_font.render(f"NODES IN SCENE: {len(self.current_scene.root_node.children) if self.current_scene is not None else "None"}", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 2 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-        text_str = self.inspector_selected_node
-        if self.inspector_selected_node is not None:
-            text_str = float(pympler.asizeof.asizesof(self.inspector_selected_node.node())[0]) / 1024**2
-        text = self.default_main_font.render(f"Selected Node Memory Usage: {text_str}MB", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (10, WINDOW_BASE_HEIGHT / 2 + 3 * (INSPECTOR_SUBTEXT_SIZE + 5)))
-
-
-
-
-
-        rect = pygame.Rect(0, WINDOW_BASE_HEIGHT-40, INSPECTOR_LEFT_PANEL_WIDTH/2, 40)
-        pygame.draw.rect(self.window, (255, 0, 0), rect)
-        text = self.default_main_font.render("SAVE/CREATE", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, rect.center)
-        rect = pygame.Rect(INSPECTOR_LEFT_PANEL_WIDTH/2, WINDOW_BASE_HEIGHT-40, INSPECTOR_LEFT_PANEL_WIDTH/2, 40)
-
-        pygame.draw.rect(self.window, (150, 0, 0), rect)
-        text = self.default_main_font.render("LOAD", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, rect.center)
-
-
-
-
+        self.inspector_tab_0_nodes_pack.render()
 
 
 

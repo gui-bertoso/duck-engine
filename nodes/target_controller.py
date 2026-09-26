@@ -8,7 +8,9 @@ from settings import NONE_ICON_PATH
 
 
 class TargetController:
-    def __init__(self, best_weights=[]):
+    def __init__(self, best_weights=None):
+        if best_weights is None:
+            best_weights = []
         self.parent = None
 
         self.weights = []
@@ -22,15 +24,15 @@ class TargetController:
 
         self.processed_inputs = []
 
-        self.hiddens_one = []
-        self.hiddens_two = []
+        self.hidden_one = []
+        self.hidden_two = []
 
         self.output0 = 0
         self.output1 = 0
 
         self.icon = pygame.image.load(NONE_ICON_PATH)
 
-        self.hiddens_per_layer = 4
+        self.hidden_per_layer = 4
 
         self.weights_quantity = 100
 
@@ -42,15 +44,13 @@ class TargetController:
         else:
             for i in range(self.weights_quantity):
                 self.weights.append(best_weights[i] + random.randint(-10, 10))
-        self.ram_usage_kb = sys.getsizeof(self) / 1024
-        print(f"         [+] node ram usage -> {self.ram_usage_kb} KB")
 
 
     def update(self):
         self.processed_inputs.clear()
         self.inputs.clear()
-        self.hiddens_one.clear()
-        self.hiddens_two.clear()
+        self.hidden_one.clear()
+        self.hidden_two.clear()
 
         current_w = 0
 
@@ -69,27 +69,27 @@ class TargetController:
         self.inputs.append(LEFT_LIMIT)
         self.inputs.append(RIGHT_LIMIT)
 
-        for i in range(self.hiddens_per_layer):
+        for i in range(self.hidden_per_layer):
             v = 0
             for tv in self.inputs:
                 v += tv * self.weights[current_w]
                 current_w += 1
-            self.hiddens_one.append(v * self.bias)
+            self.hidden_one.append(v * self.bias)
 
-        for i in range(self.hiddens_per_layer):
+        for i in range(self.hidden_per_layer):
             v = 0
-            for tv in self.hiddens_one:
+            for tv in self.hidden_one:
                 v += tv * self.weights[current_w]
                 current_w += 1
-            self.hiddens_two.append(v * self.bias)
+            self.hidden_two.append(v * self.bias)
 
-        if round(self.hiddens_two[0]) > 0:
+        if round(self.hidden_two[0]) > 0:
             self.parent.position.x += self.parent.speed
-        if round(self.hiddens_two[1]) > 0:
+        if round(self.hidden_two[1]) > 0:
             self.parent.position.x -= self.parent.speed
-        if round(self.hiddens_two[2]) > 0:
+        if round(self.hidden_two[2]) > 0:
             self.parent.position.y += self.parent.speed
-        if round(self.hiddens_two[3]) > 0:
+        if round(self.hidden_two[3]) > 0:
             self.parent.position.y -= self.parent.speed
 
 
@@ -107,5 +107,5 @@ class TargetController:
         self.pontuation += 0.01
 
 
-    def draw(self):
+    def render(self):
         pass

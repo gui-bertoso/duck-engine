@@ -1,6 +1,5 @@
 import random
 import pygame
-from node.serializer import serialize_node
 
 from settings import EMPTY_NODE_ICON_PATH
 

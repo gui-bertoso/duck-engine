@@ -11,8 +11,8 @@ class Rect(Node):
         self.border_color = pygame.Color(0, 0, 0)
         self.border_width = 3
 
-    def draw(self):
-        pygame.draw.rect(self.window, self.color, (self.size.x-self.border_width*2, self.size.y-self.border_width*2, self.position.x, self.position.y))
+    def render(self):
+        pygame.draw.rect(self.window, self.border_color, (self.size.x-self.border_width*2, self.size.y-self.border_width*2, self.position.x, self.position.y))
         pygame.draw.rect(self.window, self.color, (self.size.x, self.size.y, self.size.x, self.size.y), self.border_width)
 
     def update(self):

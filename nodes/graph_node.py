@@ -8,7 +8,7 @@ from settings import GRAPH_ICON_PATH
 
 class GraphNode(Node):
     def __init__(self):
-        Node.__init__(self)
+        super().__init__()
         self.max_points = 100
         self.values = []
         self.size = pygame.math.Vector2(100, 100)
@@ -23,7 +23,7 @@ class GraphNode(Node):
         if len(self.values) > self.max_points:
             self.values.pop(0)
 
-    def draw(self):
+    def render(self):
         graph_x = self.position.x
         graph_y = self.position.y
         graph_w = self.size.x
