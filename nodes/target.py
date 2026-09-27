@@ -14,6 +14,7 @@ class Target(Node):
         self.icon = pygame.image.load(NONE_ICON_PATH)
 
     def render(self):
+        super().render()
         pygame.draw.rect(self.window, (255, 0, 0), (self.position.x, self.position.y, 30, 30))
 
     def update(self):

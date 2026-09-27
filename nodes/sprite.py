@@ -14,7 +14,7 @@ class Sprite(Node):
         pass
 
     def render(self):
-        pass
+        super().render()
 
     def set_texture(self, path):
         self.texture = pygame.image.load(path)

@@ -1,7 +1,6 @@
 import pygame
 
 from enums import LogType
-from logger import print_log
 from main import INSPECTOR_LEFT_PANEL_WIDTH
 from settings import DEFAULT_FONT, DEFAULT_MAIN_FONT_SIZE
 

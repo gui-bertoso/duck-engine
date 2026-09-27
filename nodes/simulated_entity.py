@@ -22,4 +22,5 @@ class SimulatedEntity(Entity):
         self.controller.update()
 
     def render(self):
+        super().render()
         pygame.draw.circle(self.window, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), self.position, 30)

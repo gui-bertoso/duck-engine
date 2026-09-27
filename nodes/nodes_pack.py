@@ -1,3 +1,6 @@
+from enums import LogType
+
+
 class NodePack:
     def __init__(self):
         self.nodes = []

@@ -1,7 +1,6 @@
 import pygame
 
 from enums import LogType
-from logger import print_log
 from nodes.nodes_display_node import NodesDisplayNode
 
 from main import INSPECTOR_LEFT_PANEL_WIDTH
@@ -47,6 +46,3 @@ class NodesDisplay:
         _node.window = self.window
 
         self.nodes.append(_node)
-
-        print_log("new node added to nodes display", LogType.Info, 1)
-        print_log(f"nodes list : {self.nodes}", LogType.Detail, 2)

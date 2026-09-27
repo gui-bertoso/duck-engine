@@ -24,6 +24,7 @@ class GraphNode(Node):
             self.values.pop(0)
 
     def render(self):
+        super().render()
         graph_x = self.position.x
         graph_y = self.position.y
         graph_w = self.size.x

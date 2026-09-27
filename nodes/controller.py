@@ -109,4 +109,4 @@ class Controller:
 
 
     def render(self):
-        pass
+        super().render()

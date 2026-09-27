@@ -21,7 +21,12 @@ class Label(Node):
     def update(self):
         pass
 
+    def get_size(self):
+        return pygame.math.Vector2(self.text_rendered.get_width(), self.text_rendered.get_height())
+
+
     def render(self):
+        super().render()
         if self.l_text != self.text or self.font_size != self.l_font_size:
             self.l_text = self.text
             self.l_font_size = self.font_size

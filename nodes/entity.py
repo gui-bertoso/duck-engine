@@ -14,7 +14,7 @@ class Entity(Node):
         self.icon = pygame.image.load(ENTITY_ICON_PATH)
 
     def render(self):
-        pass
+        super().render()
 
     def update(self):
         pass

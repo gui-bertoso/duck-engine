@@ -11,9 +11,15 @@ class Node(EmptyNode):
         self.position = pygame.math.Vector2(0, 0)
         self.icon = pygame.image.load(NODE_ICON_PATH)
 
+    def get_size(self):
+        return pygame.math.Vector2(0, 0)
+
+    def add_child(self, child):
+        self.children.append(child)
+
     def render(self):
         for child in self.children:
-            child.draw()
+            child.render()
 
     def update(self):
         for child in self.children:

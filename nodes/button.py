@@ -2,7 +2,6 @@ import pygame
 
 from enums import ButtonState
 from nodes import *
-from settings import DEFAULT_FONT
 
 
 class Button(Node):
@@ -28,7 +27,7 @@ class Button(Node):
 
         self.action = None
 
-        self.state = ButtonState
+        self.state = ButtonState.Standard
 
         self.disabled = False
 
@@ -37,29 +36,14 @@ class Button(Node):
         self.text = "ButtonName"
         self.l_text = ""
 
-
         self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
 
     def render(self):
-        match self.state:
-            case ButtonState.Standard:
-                pygame.draw.rect(self.window, self.base_color, self.rect)
-                text = self.font.render(self.text, True, self.text_base_color)
-                self.window.blit(text, (self.rect.x-text.get_width()/2, self.rect.y-text.get_height()/2))
-            case ButtonState.Disabled:
-                pygame.draw.rect(self.window, self.disabled_color, self.rect)
-                text = self.font.render(self.text, True, self.text_disabled_color)
-                self.window.blit(text, (self.rect.x-text.get_width()/2, self.rect.y-text.get_height()/2))
-            case ButtonState.Clicked:
-                pygame.draw.rect(self.window, self.pressed_color, self.rect)
-                text = self.font.render(self.text, True, self.text_pressed_color)
-                self.window.blit(text, (self.rect.x-text.get_width()/2, self.rect.y-text.get_height()/2))
-            case ButtonState.Hovered:
-                pygame.draw.rect(self.window, self.hover_color, self.rect)
-                text = self.font.render(self.text, True, self.text_hover_color)
-                self.window.blit(text, (self.rect.x-text.get_width()/2, self.rect.y-text.get_height()/2))
+        super().render()
 
-    def update(self):
+        if not self.window:
+            return
+
         if self.disabled:
             self.state = ButtonState.Disabled
             return
@@ -70,10 +54,27 @@ class Button(Node):
             self.l_pos = self.position
             self.l_text = self.text
 
-        if self.rect.colliderect(pygame.mouse.get_pos()):
+        if self.rect.collidepoint(pygame.mouse.get_pos()):
             self.state = ButtonState.Hovered
-            if self.click_event == None:
-                return
-            if self.click_event.is_set():
-                self.state = ButtonState.Clicked
+            if self.click_event is not None:
+                if self.click_event.is_set():
+                    self.state = ButtonState.Clicked
+
+        color = self.base_color
+        match self.state:
+            case ButtonState.Standard:
+                color = self.base_color
+            case ButtonState.Disabled:
+                color = self.disabled_color
+            case ButtonState.Clicked:
+                color = self.pressed_color
+            case ButtonState.Hovered:
+                color = self.hover_color
+
+        pygame.draw.rect(self.window, color, self.rect)
+        text = self.font.render(self.text, True, self.text_base_color)
+        self.window.blit(text, (self.rect.x-text.get_width()/2, self.rect.y-text.get_height()/2))
+
+    def update(self):
+        super().update()
 

@@ -2,7 +2,6 @@ import os
 
 from enums import *
 
-from logger import *
 import logging
 
 logging.basicConfig(level=logging.FATAL)
@@ -36,6 +35,32 @@ RUNTIME_INSPECTOR_TIME = 0.0
 
 INSPECTOR_LEFT_PANEL_WIDTH = 400
 
+CURRENT_LOADING_TEXT = ""
+
+
+
+def print_log(message, type, indent=0):
+    global CURRENT_LOADING_TEXT
+    prefix = ""
+    if type == LogType.Info:
+        prefix = "[INFO]"
+    elif type == LogType.Warning:
+        prefix = "[WARNING]"
+    elif type == LogType.Error:
+        prefix = "[ERROR]"
+    elif type == LogType.Debug:
+        prefix = "[DEBUG]"
+    elif type == LogType.Detail:
+        prefix = "[+]"
+    elif type == LogType.Core:
+        prefix = "[CORE]"
+    else:
+        prefix = ""
+
+    indentation = "      " * indent
+    print(f"{indentation}{prefix} {message}")
+    CURRENT_LOADING_TEXT = message
+
 
 class Engine:
     def __init__(self):
@@ -49,12 +74,12 @@ class Engine:
         print_log(f"creating pygame window", LogType.Detail, 1)
         self.window = None
         pygame.display.set_caption("Duck Engine")
-        
+
 
         print_log(f"creating clocks", LogType.Detail, 1)
         self.process_clock = pygame.time.Clock()
         self.render_clock = pygame.time.Clock()
-        
+
 
         print_log(f"creating events", LogType.Detail, 1)
         self.close_event = threading.Event()
@@ -128,7 +153,7 @@ class Engine:
 
         self.total_memory_amount = 0
         self.used_memory_amount = 0
-        
+
         self.hardware_data_getter_thread = threading.Thread(target=self.get_hardware_data, daemon=True)
 
         self.inspector_tab_0_nodes_pack = None
@@ -161,21 +186,38 @@ class Engine:
 
 
     def create_scene_packs(self):
+        print_log(f"creating nodes and node packs", LogType.Detail, 1)
         self.inspector_tab_0_nodes_pack = NodePack()
 
+        print_log(f"creating main rect", LogType.Detail, 1)
         mr = Rect()
         mr.window = self.window
         mr.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT)
         mr.color = pygame.Color(100, 100, 100)
+        mr.position = pygame.math.Vector2(0, 0)
 
+        print_log(f"adding main rect", LogType.Detail, 1)
         self.inspector_tab_0_nodes_pack.add_node(mr)
 
+        print_log(f"creating a label", LogType.Detail, 1)
+        ml0 = Label()
+        ml0.text = "NOT SCENE LOADED"
+        ml0.window = self.window
+        ml0.font_size = 40
+        ml0.position = pygame.math.Vector2((((WINDOW_LOADING_WIDTH-INSPECTOR_LEFT_PANEL_WIDTH)/2) + INSPECTOR_LEFT_PANEL_WIDTH), WINDOW_BASE_HEIGHT/2 - ml0.get_size().y)
 
+        print_log(f"adding a label", LogType.Detail, 1)
+        mr.add_child(ml0)
 
-
-
-
-
+        btt0 = Button()
+        btt0.position = pygame.math.Vector2(0, 0)
+        btt0.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH/3, 30)
+        btt0.text = "TAB 0"
+        btt0.window = self.window
+        btt0.base_color = pygame.Color(255, 0, 0)
+        btt0.hover_color = pygame.Color(255, 100, 100)
+        btt0.pressed_color = pygame.Color(100, 100, 100)
+        mr.add_child(btt0)
 
         self.inspector_tab_1_nodes_pack = NodePack()
         self.inspector_tab_2_nodes_pack = NodePack()
@@ -266,6 +308,9 @@ class Engine:
                 text = self.default_main_font.render("Getting ready, wait", True, DEFAULT_FONT_COLOR)
                 self.window.blit(text, (WINDOW_LOADING_WIDTH-text.get_size()[0]/2, WINDOW_LOADING_HEIGHT+DEFAULT_MAIN_FONT_SIZE))
 
+            text = self.default_main_font.render(CURRENT_LOADING_TEXT, True, DEFAULT_FONT_COLOR)
+            self.window.blit(text, (WINDOW_LOADING_WIDTH - text.get_size()[0] / 2, WINDOW_LOADING_HEIGHT + DEFAULT_MAIN_FONT_SIZE))
+
             pygame.display.flip()
 
             if self.ready:
@@ -276,8 +321,10 @@ class Engine:
 
 
     def start(self):
+        print_log(f"creating main window", LogType.Detail, 1)
         self.window = pygame.display.set_mode((WINDOW_BASE_WIDTH, WINDOW_BASE_HEIGHT), vsync=VSYNC_ENABLED, display=DEFAULT_DISPLAY)
 
+        print_log(f"creating inspector node packs", LogType.Detail, 1)
         self.create_scene_packs()
 
         print_log(f"starting sub runtime 0", LogType.Detail, 1)
@@ -350,7 +397,7 @@ class Engine:
             RUNTIME_EVENT_PROCESS_TIME = time.perf_counter() - start_time
             self.window.fill(BACKGROUND_COLOR)
 
-            if self.current_scene != None:
+            if self.current_scene is not None:
                 start_time = time.perf_counter()
                 self.current_scene.root_node.update()
                 RUNTIME_NODES_UPDATE_TIME = time.perf_counter() - start_time
@@ -394,6 +441,7 @@ class Engine:
 
 
     def inspector(self):
+        self.inspector_tab_0_nodes_pack.update()
         self.inspector_tab_0_nodes_pack.render()
 
     def inspector_tab_0(self):
@@ -585,7 +633,7 @@ class Engine:
         self.ready_percentage += 7.7
 
         print_log("preparing to get gpus data", LogType.Detail, 2)
-        
+
         print_log("creating wmi computer", LogType.Detail, 3)
         computer = wmi.WMI()
 

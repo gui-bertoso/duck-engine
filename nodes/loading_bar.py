@@ -16,6 +16,7 @@ class LoadingBar(Node):
         self.icon = pygame.image.load(LOADING_ICON_PATH)
 
     def render(self):
+        super().render()
         percentage = self.value / self.max_value
         fill_size = self.size.x * percentage
         pygame.draw.rect(self.window, self.base_color, (self.position.x, self.position.y, self.size.x, self.size.y))
