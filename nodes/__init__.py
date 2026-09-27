@@ -15,3 +15,4 @@ from .nodes_display_node import NodesDisplayNode
 from .label import Label
 from .button import Button
 from .nodes_pack import NodePack
+from .tabs_panel import TabsPanel

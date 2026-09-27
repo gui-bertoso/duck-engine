@@ -189,53 +189,27 @@ class Engine:
         print_log(f"creating nodes and node packs", LogType.Detail, 1)
         self.inspector_tab_0_nodes_pack = NodePack()
 
-        print_log(f"creating main rect", LogType.Detail, 1)
-        mr = Rect()
-        mr.window = self.window
-        mr.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT)
-        mr.color = pygame.Color(100, 100, 100)
-        mr.position = pygame.math.Vector2(0, 0)
+        tp = TabsPanel()
+        tp.window = self.window
+        tp.size.y = WINDOW_BASE_HEIGHT
+        tp.size.x = INSPECTOR_LEFT_PANEL_WIDTH
+        tp.position = pygame.math.Vector2(0, 0)
+        tp.click_event = self.click_event
 
-        print_log(f"adding main rect", LogType.Detail, 1)
-        self.inspector_tab_0_nodes_pack.add_node(mr)
+        for i in range(7):
+            n = NodePack()
+            a = list(vars(Button()).keys())
+            for i2 in range(len(a)):
+                l = Label()
+                l.text = a[i2]
+                l.window = self.window
+                l.position = pygame.math.Vector2(100, 20+i2*30)
+                n.add_node(l)
 
-        print_log(f"creating a label", LogType.Detail, 1)
-        ml0 = Label()
-        ml0.text = "NOT SCENE LOADED"
-        ml0.window = self.window
-        ml0.font_size = 40
-        ml0.position = pygame.math.Vector2((((WINDOW_LOADING_WIDTH-INSPECTOR_LEFT_PANEL_WIDTH)/2) + INSPECTOR_LEFT_PANEL_WIDTH), WINDOW_BASE_HEIGHT/2 - ml0.get_size().y)
+            n.name = f"TAB {i}"
+            tp.add_tab(n)
 
-        print_log(f"adding a label", LogType.Detail, 1)
-        mr.add_child(ml0)
-
-        tab_size = INSPECTOR_LEFT_PANEL_WIDTH/3
-
-        btt0 = Button()
-        btt0.position = pygame.math.Vector2(0, 0)
-        btt0.size = pygame.math.Vector2(tab_size, 40)
-        btt0.text = "TAB 0"
-        btt0.click_event = self.click_event
-        btt0.window = self.window
-        mr.add_child(btt0)
-
-        btt1 = Button()
-        btt1.position = pygame.math.Vector2(tab_size, 0)
-        btt1.size = pygame.math.Vector2(tab_size, 40)
-        btt1.text = "TAB 1"
-        btt1.click_event = self.click_event
-        btt1.window = self.window
-        mr.add_child(btt1)
-
-        btt2 = Button()
-        btt2.position = pygame.math.Vector2(tab_size*2, 0)
-        btt2.size = pygame.math.Vector2(tab_size, 40)
-        btt2.text = "TAB 2"
-        btt2.click_event = self.click_event
-        btt2.window = self.window
-        mr.add_child(btt2)
-
-
+        self.inspector_tab_0_nodes_pack.add_node(tp)
 
 
     def inspector(self):

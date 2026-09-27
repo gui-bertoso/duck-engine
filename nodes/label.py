@@ -15,6 +15,8 @@ class Label(Node):
 
         self.color = (255, 255, 255)
 
+        self.window = None
+
         self.font = pygame.font.SysFont("Arial", self.font_size)
         self.text_rendered = self.font.render(self.text, True, self.color)
 

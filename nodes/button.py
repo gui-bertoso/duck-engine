@@ -18,7 +18,10 @@ class Button(Node):
         self.text_pressed_color = pygame.Color(100, 255, 100)
         self.text_disabled_color = pygame.Color(100, 255, 100)
 
-        self.font = pygame.font.SysFont("Arial", 20)
+        self.font_size = 20
+        self.l_font_size = 0
+
+        self.font = pygame.font.SysFont("Arial", self.font_size)
 
         self.size = pygame.math.Vector2(32, 32)
         self.l_size = pygame.math.Vector2(0, 0)
@@ -26,6 +29,7 @@ class Button(Node):
         self.l_pos = pygame.math.Vector2(0, 0)
 
         self.action = None
+        self.action_parameter = None
 
         self.state = ButtonState.Standard
 
@@ -34,6 +38,9 @@ class Button(Node):
         self.click_event = None
 
         self.text = "ButtonName"
+
+        self.locked = False
+
         self.l_text = ""
 
         self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
@@ -52,6 +59,7 @@ class Button(Node):
             case ButtonState.Hovered:
                 color = self.hover_color
 
+
         pygame.draw.rect(self.window, color, self.rect)
         text = self.font.render(self.text, True, self.text_base_color)
         rect_pos = self.rect.center
@@ -60,21 +68,30 @@ class Button(Node):
     def update(self):
         super().update()
 
+
         if self.disabled:
             self.state = ButtonState.Disabled
 
-        if self.l_size != self.size or self.position != self.l_pos or self.l_text != self.text:
+        if self.l_size != self.size or self.position != self.l_pos or self.l_text != self.text or self.font_size != self.l_font_size:
             self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
+            self.font = pygame.font.SysFont("Arial", self.font_size)
             self.l_size = self.size
             self.l_pos = self.position
             self.l_text = self.text
-
 
         if self.rect.collidepoint(pygame.mouse.get_pos()):
             self.state = ButtonState.Hovered
             if self.click_event is not None:
                 if self.click_event.is_set():
                     self.state = ButtonState.Clicked
+                    if self.action is not None:
+                        if self.action_parameter is not None:
+                            self.action(self.action_parameter)
+                        else:
+                            self.action()
         else:
             self.state = ButtonState.Standard
-        print(self.state)
+
+
+        if self.locked:
+            self.state = ButtonState.Clicked

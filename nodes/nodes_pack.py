@@ -5,6 +5,8 @@ class NodePack:
     def __init__(self):
         self.nodes = []
 
+        self.name = "NodePack"
+
     def render(self):
         for i in self.nodes:
             i.render()
