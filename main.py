@@ -209,20 +209,38 @@ class Engine:
         print_log(f"adding a label", LogType.Detail, 1)
         mr.add_child(ml0)
 
+        tab_size = INSPECTOR_LEFT_PANEL_WIDTH/3
+
         btt0 = Button()
         btt0.position = pygame.math.Vector2(0, 0)
-        btt0.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH/3, 30)
+        btt0.size = pygame.math.Vector2(tab_size, 40)
         btt0.text = "TAB 0"
+        btt0.click_event = self.click_event
         btt0.window = self.window
-        btt0.base_color = pygame.Color(255, 0, 0)
-        btt0.hover_color = pygame.Color(255, 100, 100)
-        btt0.pressed_color = pygame.Color(100, 100, 100)
         mr.add_child(btt0)
 
-        self.inspector_tab_1_nodes_pack = NodePack()
-        self.inspector_tab_2_nodes_pack = NodePack()
+        btt1 = Button()
+        btt1.position = pygame.math.Vector2(tab_size, 0)
+        btt1.size = pygame.math.Vector2(tab_size, 40)
+        btt1.text = "TAB 1"
+        btt1.click_event = self.click_event
+        btt1.window = self.window
+        mr.add_child(btt1)
+
+        btt2 = Button()
+        btt2.position = pygame.math.Vector2(tab_size*2, 0)
+        btt2.size = pygame.math.Vector2(tab_size, 40)
+        btt2.text = "TAB 2"
+        btt2.click_event = self.click_event
+        btt2.window = self.window
+        mr.add_child(btt2)
 
 
+
+
+    def inspector(self):
+        self.inspector_tab_0_nodes_pack.update()
+        self.inspector_tab_0_nodes_pack.render()
 
 
     @staticmethod
@@ -280,12 +298,6 @@ class Engine:
 
         print(loaded_scene)
         return [SceneLoadState.SuccessfulLoaded, loaded_scene]
-
-
-
-
-
-
 
 
     def loading_screen(self):
@@ -438,158 +450,6 @@ class Engine:
             new_node.icon = t_node.icon
 
             self.nodes_display.add_node(new_node)
-
-
-    def inspector(self):
-        self.inspector_tab_0_nodes_pack.update()
-        self.inspector_tab_0_nodes_pack.render()
-
-    def inspector_tab_0(self):
-        self.inspector_tab_0_nodes_pack.render()
-
-
-
-    def inspector_tab_1(self):
-        text = self.default_title_font.render("Analysis", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
-
-        analysis_helper = [
-            f"CPU name: {self.cpu_name}",
-            f"GPU name: {self.gpu_name}",
-            "",
-            f"OS name: {self.os_name}",
-            f"OS arch: {self.os_arch}",
-            f"OS version: {self.os_version}",
-            "",
-            f"CPU cores: {self.cpu_count}",
-            f"CPU threads: {self.cpu_threads}",
-            "",
-            f"GPU count: {self.gpu_count}",
-            f"GPU total VRAM: {self.gpu_total_video_memory}GB",
-            f"GPU used VRAM: {self.gpu_used_video_memory}GB",
-            "",
-            f"Total RAM: {self.total_memory_amount}GB",
-            f"Used RAM: {self.used_memory_amount}GB",
-            "",
-            f"FPS: {self.render_clock.get_fps()}",
-            f"Frame Time: {self.render_clock.get_time()}ms",
-            f"Delta Time: {DELTA_TIME}ms",
-            f"Tick Rate: {self.process_clock.get_fps()}",
-            f"Tick Time: {self.process_clock.get_time()}ms",
-            "",
-            f"Runtime process time: {RUNTIME_PROCESS_TIME}",
-            f"Runtime event process time: {RUNTIME_EVENT_PROCESS_TIME}",
-            f"Runtime inspector time: {RUNTIME_INSPECTOR_TIME}",
-            f"Runtime node icons draw time: {RUNTIME_NODE_ICONS_DRAW_TIME}",
-            f"Runtime nodes update time: {RUNTIME_NODES_UPDATE_TIME}",
-        ]
-
-        for index, text in enumerate(analysis_helper):
-            setting_text = self.default_main_font.render(text, True, DEFAULT_FONT_COLOR)
-            self.window.blit(setting_text, (10, WINDOW_BASE_HEIGHT / 10 + index * (INSPECTOR_SUBTEXT_SIZE + 5)))
-
-
-    def inspector_tab_2(self):
-        text = self.default_title_font.render("Settings", True, DEFAULT_FONT_COLOR)
-        self.window.blit(text, (INSPECTOR_LEFT_PANEL_WIDTH / 2 - text.get_width() / 2, INSPECTOR_TAB_HEIGHT + 10))
-
-        settings_helper = [
-            f"Empty Node Icon Path: {EMPTY_NODE_ICON_PATH}",
-            f"Node Icon Path: {NODE_ICON_PATH}",
-            f"Root Icon Path: {ROOT_ICON_PATH}",
-            f"Default Font: {DEFAULT_FONT}",
-            f"Inspector Tab Font Size: {INSPECTOR_TAB_FONT_SIZE}",
-            f"Background Color: {BACKGROUND_COLOR}",
-            f"Inspector Tab Base Color: {INSPECTOR_TAB_BASE_COLOR}",
-            f"Inspector Tab Hover Color: {INSPECTOR_TAB_HOVER_COLOR}",
-            f"Inspector Tab Selected Color: {INSPECTOR_TAB_SELECTED_COLOR}",
-            f"Inspector Tab Selected Hover Color: {INSPECTOR_TAB_SELECTED_HOVER_COLOR}",
-            f"Inspector Tab Base Text Color: {INSPECTOR_TAB_BASE_TEXT_COLOR}",
-            f"Inspector Tab Hover Text Color: {INSPECTOR_TAB_HOVER_TEXT_COLOR}",
-            f"Inspector Tab Selected Text Color: {INSPECTOR_TAB_SELECTED_TEXT_COLOR}",
-            f"Inspector Tab Selected Hover Text Color: {INSPECTOR_TAB_SELECTED_HOVER_TEXT_COLOR}",
-            f"Default Font Color: {DEFAULT_FONT_COLOR}",
-            f"Inspector Subtext Size: {INSPECTOR_SUBTEXT_SIZE}",
-            f"Window Width: {WINDOW_BASE_WIDTH}",
-            f"Window Height: {WINDOW_BASE_HEIGHT}",
-            f"Frame Rate: {FRAME_RATE}",
-            f"Update Rate: {UPDATE_RATE}",
-            f"Vsync Enabled: {VSYNC_ENABLED}",
-            f"Default Display: {DEFAULT_DISPLAY}",
-        ]
-
-        for index, text in enumerate(settings_helper):
-            setting_text = self.default_main_font.render(text, True, DEFAULT_FONT_COLOR)
-            self.window.blit(setting_text, (10, WINDOW_BASE_HEIGHT / 10 + index * (INSPECTOR_SUBTEXT_SIZE + 5)))
-
-    def draw_inspector_tab_0(self, state=0):
-        font_color = INSPECTOR_TAB_BASE_TEXT_COLOR
-        tab_color = INSPECTOR_TAB_BASE_COLOR
-
-        match state:
-            case 0:
-                font_color = INSPECTOR_TAB_BASE_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_BASE_COLOR
-            case 1:
-                font_color = INSPECTOR_TAB_HOVER_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_HOVER_COLOR
-            case 2:
-                font_color = INSPECTOR_TAB_SELECTED_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_SELECTED_COLOR
-            case 3:
-                font_color = INSPECTOR_TAB_SELECTED_HOVER_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_SELECTED_HOVER_COLOR
-
-        self.tab_0 = pygame.draw.rect(self.window, tab_color, (0, 0, self.tab_size, INSPECTOR_TAB_HEIGHT))
-        tab_0_text = self.default_main_font.render("Tab 0", True, font_color)
-        text_rect = tab_0_text.get_rect(center=self.tab_0.center)
-        self.window.blit(tab_0_text, text_rect)
-
-    def draw_inspector_tab_1(self, state=0):
-        font_color = INSPECTOR_TAB_BASE_TEXT_COLOR
-        tab_color = INSPECTOR_TAB_BASE_COLOR
-
-        match state:
-            case 0:
-                font_color = INSPECTOR_TAB_BASE_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_BASE_COLOR
-            case 1:
-                font_color = INSPECTOR_TAB_HOVER_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_HOVER_COLOR
-            case 2:
-                font_color = INSPECTOR_TAB_SELECTED_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_SELECTED_COLOR
-            case 3:
-                font_color = INSPECTOR_TAB_SELECTED_HOVER_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_SELECTED_HOVER_COLOR
-
-        self.tab_1 = pygame.draw.rect(self.window, tab_color, (self.tab_size, 0, self.tab_size, INSPECTOR_TAB_HEIGHT))
-        tab_1_text = self.default_main_font.render("Tab 1", True, font_color)
-        text_rect = tab_1_text.get_rect(center=self.tab_1.center)
-        self.window.blit(tab_1_text, text_rect)
-
-    def draw_inspector_tab_2(self, state=0):
-        font_color = INSPECTOR_TAB_BASE_TEXT_COLOR
-        tab_color = INSPECTOR_TAB_BASE_COLOR
-
-        match state:
-            case 0:
-                font_color = INSPECTOR_TAB_BASE_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_BASE_COLOR
-            case 1:
-                font_color = INSPECTOR_TAB_HOVER_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_HOVER_COLOR
-            case 2:
-                font_color = INSPECTOR_TAB_SELECTED_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_SELECTED_COLOR
-            case 3:
-                font_color = INSPECTOR_TAB_SELECTED_HOVER_TEXT_COLOR
-                tab_color = INSPECTOR_TAB_SELECTED_HOVER_COLOR
-
-        self.tab_2 = pygame.draw.rect(self.window, tab_color, (self.tab_size*2, 0, self.tab_size, INSPECTOR_TAB_HEIGHT))
-        tab_2_text = self.default_main_font.render("Tab 2", True, font_color)
-        text_rect = tab_2_text.get_rect(center=self.tab_2.center)
-        self.window.blit(tab_2_text, text_rect)
 
 
     def get_hardware_data(self):

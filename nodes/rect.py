@@ -24,9 +24,11 @@ class Rect(Node):
 
             self.rect = pygame.rect.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
         pygame.draw.rect(self.window, self.color, self.rect)
+
         super().render()
 
 
     def update(self):
+        super().update()
         if self.resizable:
             pass
