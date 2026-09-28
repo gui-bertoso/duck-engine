@@ -199,12 +199,16 @@ class Engine:
         for i in range(7):
             n = NodePack()
             a = list(vars(Button()).keys())
-            for i2 in range(len(a)):
-                l = Label()
-                l.text = a[i2]
-                l.window = self.window
-                l.position = pygame.math.Vector2(100, 20+i2*30)
-                n.add_node(l)
+
+            t_text = ""
+            for i2 in a:
+                t_text += i2
+
+            sl = ScrollableLabel()
+            sl.window = self.window
+            sl.position = pygame.math.Vector2(100, 100)
+            sl.text = t_text
+            n.add_node(sl)
 
             n.name = f"TAB {i}"
             tp.add_tab(n)
