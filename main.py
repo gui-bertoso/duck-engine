@@ -20,7 +20,6 @@ import psutil
 import wmi
 import subprocess
 import re
-import pympler.asizeof
 import asyncio
 
 DELTA_TIME = 0.0
@@ -196,30 +195,120 @@ class Engine:
         tp.position = pygame.math.Vector2(0, 0)
         tp.click_event = self.click_event
 
-        for i in range(7):
-            n = NodePack()
-            a = list(vars(Button()).keys())
-
-            t_text = ""
-            for i2 in a:
-                t_text += i2
-
-            sl = ScrollableLabel()
-            sl.window = self.window
-            sl.position = pygame.math.Vector2(100, 100)
-            sl.text = t_text
-            n.add_node(sl)
-
-            n.name = f"TAB {i}"
-            tp.add_tab(n)
+        tp.add_tab(self.create_tab_0_node_pack())
+        tp.add_tab(self.create_tab_1_node_pack())
 
         self.inspector_tab_0_nodes_pack.add_node(tp)
+
+
+
+    def create_tab_0_node_pack(self):
+        n = NodePack()
+        n.name = f"TAB 0"
+        a = list(vars(Button()).keys())
+        b = list(vars(Button()).values())
+
+        t_text = ""
+        for i2 in a:
+            t_text += str(i2) + "\n"
+
+        bt_text = ""
+        for bi2 in b:
+            bt_text += self.parse_property_value(bi2) + "\n"
+
+
+        l = Label()
+        l.window = self.window
+        l.position = pygame.math.Vector2(160, 40)
+        l.text = "Properties"
+        l.update_render_data()
+
+        sl = ScrollableLabel()
+        sl.window = self.window
+        sl.position = pygame.math.Vector2(20, 70)
+        sl.text = t_text
+        sl.font_size = 16
+        sl.update_render_data()
+
+        sl2 = ScrollableLabel()
+        sl2.window = self.window
+        sl2.position = pygame.math.Vector2(220, 70)
+        sl2.text = bt_text
+        sl2.font_size = 16
+        sl2.update_render_data()
+
+        n.add_node(l)
+        n.add_node(sl)
+        n.add_node(sl2)
+
+        return n
+
+    def create_tab_1_node_pack(self):
+        n = NodePack()
+        n.name = f"TAB 1"
+        a = list(vars(Button()).keys())
+        b = list(vars(Button()).values())
+
+        t_text = ""
+        for i2 in a:
+            t_text += str(i2) + "\n"
+
+        bt_text = ""
+        for bi2 in b:
+            bt_text += self.parse_property_value(bi2) + "\n"
+
+
+        l = Label()
+        l.window = self.window
+        l.position = pygame.math.Vector2(160, 40)
+        l.text = "Nodes picker"
+        l.update_render_data()
+
+
+        nd = NodesDisplay()
+        nd.window = self.window
+        nd.click_event = self.click_event
+        nd.position = pygame.math.Vector2(20, 70)
+        nd.update_rect_data()
+
+        for node in self.nodes:
+            na = NodesDisplayNode()
+            na.name = node.__name__
+            na.node = node
+            nd.add_node(na)
+
+
+        n.add_node(l)
+        n.add_node(nd)
+
+        return n
+
+
+
 
 
     def inspector(self):
         self.inspector_tab_0_nodes_pack.update()
         self.inspector_tab_0_nodes_pack.render()
 
+
+
+
+    @staticmethod
+    def parse_property_value(value):
+        if isinstance(value, pygame.Color):
+            return f"({value.r}, {value.g}, {value.b})"
+        if isinstance(value, pygame.Surface):
+            return f"{value.get_width()}x{value.get_height()}"
+        if isinstance(value, pygame.Rect):
+            return f"RectObj"
+        if isinstance(value, list):
+            return f"ListObj ({len(value)} items)"
+        if isinstance(value, pygame.font.Font):
+            return f"FontObj"
+        if value is None:
+            return f"None"
+        return str(value)
 
     @staticmethod
     def create_scene(_scene: Scene):
@@ -341,8 +430,6 @@ class Engine:
             print_log(f"error initiating sub runtime 0 {_e}", LogType.Error, 1)
 
     def runtime(self):
-        print_log(f"populating nodes display", LogType.Detail, 1)
-        self.populate_nodes_in_display()
 
         print_log(f"starting main loop", LogType.Detail, 1)
 
@@ -408,27 +495,6 @@ class Engine:
 
             pygame.display.flip()
             RUNTIME_PROCESS_TIME = time.perf_counter() - all_start_time
-
-
-    def populate_nodes_in_display(self):
-        _nd_rect = pygame.Rect(10, INSPECTOR_TAB_HEIGHT+45, self.inspector_nodes_display_size, self.inspector_nodes_display_size)
-        self.nodes_display = NodesDisplay(_nd_rect)
-        self.nodes_display.click_event = self.click_event
-        self.nodes_display.window = self.window
-
-        for _node in self.nodes:
-            new_node = NodesDisplayNode()
-
-            t_node = _node()
-
-            new_node.parent = self
-
-            new_node.name = t_node.__class__.__name__
-            new_node.node = _node
-            new_node.icon = t_node.icon
-
-            self.nodes_display.add_node(new_node)
-
 
     def get_hardware_data(self):
         asyncio.run(self.get_hardware_data_async())

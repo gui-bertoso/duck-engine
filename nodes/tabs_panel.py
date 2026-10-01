@@ -90,6 +90,7 @@ class TabsPanel(Node):
         if self.current_tab is not None:
             self.current_tab["node_pack"].render()
 
+
     def update(self):
         super().update()
 

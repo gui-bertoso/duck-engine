@@ -7,13 +7,13 @@ from main import INSPECTOR_LEFT_PANEL_WIDTH
 
 
 class NodesDisplay:
-    def __init__(self, rect):
+    def __init__(self):
         global INSPECTOR_LEFT_PANEL_WIDTH
 
         self.nodes = []
         self.scroll_y = 0
         self.window = None
-        self.rect = rect
+        self.rect = None
         self.click_event = None
 
         self.color = (30, 30, 30)
@@ -22,11 +22,17 @@ class NodesDisplay:
         self.size = pygame.math.Vector2(INSPECTOR_LEFT_PANEL_WIDTH - 20, INSPECTOR_LEFT_PANEL_WIDTH - 20)
         self.node_size = pygame.math.Vector2((self.size.x / 3) - 10, (self.size.y / 3) - 10)
 
+    def update_rect_data(self):
+        self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
+
     def render(self):
-        self.click_event.clear()
+        if self.click_event is not None:
+            self.click_event.clear()
         for ev in pygame.event.get():
             if ev.type == pygame.MOUSEBUTTONDOWN:
-                self.click_event.set()
+
+                if self.click_event is not None:
+                    self.click_event.set()
         pygame.draw.rect(self.window, self.color, self.rect)
         for i in self.nodes:
             i.click_event = self.click_event

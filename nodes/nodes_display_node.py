@@ -1,7 +1,7 @@
 import pygame
 
 from enums import LogType
-from main import INSPECTOR_LEFT_PANEL_WIDTH
+from main import INSPECTOR_LEFT_PANEL_WIDTH, print_log
 from settings import DEFAULT_FONT, DEFAULT_MAIN_FONT_SIZE
 
 
@@ -39,16 +39,18 @@ class NodesDisplayNode:
             color = self.base_color
 
             if self.rect.collidepoint(pygame.mouse.get_pos()):
-                if self.click_event.is_set():
-                    color = self.click_color
 
-                    t_node = self.get_copy()
-                    t_node.is_preview_only = True
-                    self.parent.inspector_selected_node = t_node
+                if self.click_event is not None:
+                    if self.click_event.is_set():
+                        color = self.click_color
 
-                    print_log("node clicked", LogType.Detail, 3)
-                else:
-                    color = self.hover_color
+                        t_node = self.get_copy()
+                        t_node.is_preview_only = True
+                        self.parent.inspector_selected_node = t_node
+
+                        print_log("node clicked", LogType.Detail, 3)
+                    else:
+                        color = self.hover_color
 
             pygame.draw.rect(self.window, color, self.rect)
 

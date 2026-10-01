@@ -3,11 +3,13 @@ import sys
 
 import pygame
 
+from .empty_node import EmptyNode
 from settings import TOP_LIMIT, BOTTOM_LIMIT, LEFT_LIMIT, RIGHT_LIMIT, CONTROLLER_ICON_PATH
 
 
-class Controller:
-    def __init__(self, best_weights=None):
+class Controller(EmptyNode):
+    def __init__(self):
+        best_weights = None
         if best_weights is None:
             best_weights = []
         self.parent = None

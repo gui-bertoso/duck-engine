@@ -8,7 +8,8 @@ from settings import NONE_ICON_PATH
 
 
 class TargetController:
-    def __init__(self, best_weights=None):
+    def __init__(self):
+        best_weights = []
         if best_weights is None:
             best_weights = []
         self.parent = None
