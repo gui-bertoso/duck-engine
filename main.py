@@ -37,7 +37,6 @@ INSPECTOR_LEFT_PANEL_WIDTH = 400
 CURRENT_LOADING_TEXT = ""
 
 
-
 def print_log(message, type, indent=0):
     global CURRENT_LOADING_TEXT
     prefix = ""
@@ -64,6 +63,7 @@ def print_log(message, type, indent=0):
 class Engine:
     def __init__(self):
 
+        self.render_thread = None
         self.cpu_cores = None
         print_log(f"initializing pygame", LogType.Detail, 1)
         pygame.init()
@@ -114,6 +114,8 @@ class Engine:
         self.resizing_inspector_left_panel = False
         self.can_resize_inspector_left_panel = False
 
+        self.inspector_node_pack = None
+
         self.nodes = [
             Controller,
             EmptyNode,
@@ -155,11 +157,6 @@ class Engine:
 
         self.hardware_data_getter_thread = threading.Thread(target=self.get_hardware_data, daemon=True)
 
-        self.inspector_tab_0_nodes_pack = None
-        self.inspector_tab_1_nodes_pack = None
-        self.inspector_tab_2_nodes_pack = None
-
-
         print_log(f"creating loading screen variables", LogType.Detail, 1)
         self.ready = False
         self.ready_percentage = 0
@@ -186,7 +183,7 @@ class Engine:
 
     def create_scene_packs(self):
         print_log(f"creating nodes and node packs", LogType.Detail, 1)
-        self.inspector_tab_0_nodes_pack = NodePack()
+        self.inspector_node_pack = NodePack()
 
         tp = TabsPanel()
         tp.window = self.window
@@ -197,14 +194,15 @@ class Engine:
 
         tp.add_tab(self.create_tab_0_node_pack())
         tp.add_tab(self.create_tab_1_node_pack())
+        tp.add_tab(self.create_tab_2_node_pack())
 
-        self.inspector_tab_0_nodes_pack.add_node(tp)
+        self.inspector_node_pack.add_node(tp)
 
 
 
     def create_tab_0_node_pack(self):
         n = NodePack()
-        n.name = f"TAB 0"
+        n.name = f"Node"
         a = list(vars(Button()).keys())
         b = list(vars(Button()).values())
 
@@ -245,6 +243,69 @@ class Engine:
 
     def create_tab_1_node_pack(self):
         n = NodePack()
+        n.name = f"Hardware"
+        a = [
+            "CPU Name",
+            "CPU Cores",
+            "CPU Threads",
+            "",
+            "GPU Name",
+            "GPU Total VRAM",
+            "GPU Used VRAM",
+            "",
+            "Total Memory",
+            "used Memory",
+        ]
+        b = [
+            f"{self.cpu_name}",
+            f"{self.cpu_cores}",
+            f"{self.cpu_threads}",
+            "",
+            f"{self.gpu_name}",
+            f"{self.gpu_total_video_memory}",
+            f"{self.gpu_used_video_memory}",
+            "",
+            f"{self.total_memory_amount}",
+            f"{self.used_memory_amount}",
+        ]
+
+        t_text = ""
+        for i2 in a:
+            t_text += str(i2) + "\n"
+
+        bt_text = ""
+        for bi2 in b:
+            bt_text += self.parse_property_value(bi2) + "\n"
+
+
+        l = Label()
+        l.window = self.window
+        l.position = pygame.math.Vector2(160, 40)
+        l.text = "Hardware"
+        l.update_render_data()
+
+        sl = ScrollableLabel()
+        sl.window = self.window
+        sl.position = pygame.math.Vector2(20, 70)
+        sl.text = t_text
+        sl.font_size = 16
+        sl.update_render_data()
+
+        sl2 = ScrollableLabel()
+        sl2.window = self.window
+        sl2.position = pygame.math.Vector2(220, 70)
+        sl2.text = bt_text
+        sl2.font_size = 16
+        sl2.update_render_data()
+
+        n.add_node(l)
+        n.add_node(sl)
+        n.add_node(sl2)
+
+        return n
+
+    def create_tab_2_node_pack(self):
+        n = NodePack()
         n.name = f"TAB 1"
         a = list(vars(Button()).keys())
         b = list(vars(Button()).values())
@@ -282,90 +343,6 @@ class Engine:
         n.add_node(nd)
 
         return n
-
-
-
-
-
-    def inspector(self):
-        self.inspector_tab_0_nodes_pack.update()
-        self.inspector_tab_0_nodes_pack.render()
-
-
-
-
-    @staticmethod
-    def parse_property_value(value):
-        if isinstance(value, pygame.Color):
-            return f"({value.r}, {value.g}, {value.b})"
-        if isinstance(value, pygame.Surface):
-            return f"{value.get_width()}x{value.get_height()}"
-        if isinstance(value, pygame.Rect):
-            return f"RectObj"
-        if isinstance(value, list):
-            return f"ListObj ({len(value)} items)"
-        if isinstance(value, pygame.font.Font):
-            return f"FontObj"
-        if value is None:
-            return f"None"
-        return str(value)
-
-    @staticmethod
-    def create_scene(_scene: Scene):
-        scene_name = _scene.scene_name
-        scene_version = _scene.scene_version
-        scene_id = _scene.scene_id
-
-        file_template = f"FILETYPE SCENE\n\nscene_name -> {scene_name}\nscene_version -> {scene_version}\nscene_id -> {scene_id}"
-        file_template += "\n\nchildren -> {\n"
-        for child in _scene.nodes:
-            file_template += child.serialize_node(1)
-
-        file_template += "}"
-
-        t_file = open(SCENES_FOLDER_PATH + scene_name + SCENE_EXTENSION, "w+")
-        t_file.write(file_template)
-        t_file.close()
-
-    @staticmethod
-    def load_scene(scene_path):
-        if not scene_path:
-            return [SceneLoadState.PathIsNone, None]
-        if not scene_path.endswith(SCENE_EXTENSION):
-            return [SceneLoadState.PathIsNotScene, None]
-        if not os.path.exists(scene_path):
-            return [SceneLoadState.PathIsNotFound, None]
-
-        file = open(scene_path, "r")
-        brute_data = file.read()
-        print(brute_data)
-
-        extracted_datas = {}
-
-        for line in brute_data.split("\n"):
-            match = re.match(SCENE_DATA_GETTER_REGEX, line)
-            if match:
-                extracted_datas[match.group(1)] = match.group(2)
-
-        print(extracted_datas)
-
-        loaded_scene = Scene()
-        try:
-            loaded_scene.scene_name = extracted_datas["scene_name"]
-        except KeyError:
-            loaded_scene.scene_name = "NotFound"
-        try:
-            loaded_scene.scene_version = extracted_datas["scene_version"]
-        except KeyError:
-            loaded_scene.scene_version = "NotFound"
-        try:
-            loaded_scene.scene_id = extracted_datas["scene_id"]
-        except KeyError:
-            loaded_scene.scene_id = "NotFound"
-
-        print(loaded_scene)
-        return [SceneLoadState.SuccessfulLoaded, loaded_scene]
-
 
     def loading_screen(self):
         self.window = pygame.display.set_mode((WINDOW_LOADING_WIDTH, WINDOW_LOADING_HEIGHT), vsync=VSYNC_ENABLED, display=DEFAULT_DISPLAY)
@@ -421,6 +398,8 @@ class Engine:
             self.sub_runtime_0_thread.join()
         if self.hardware_data_getter_thread.is_alive():
             self.hardware_data_getter_thread.join()
+        if self.render_thread.is_alive():
+            self.render_thread.join()
 
     def sub_runtime_0(self):
         try:
@@ -429,10 +408,33 @@ class Engine:
         except Exception as _e:
             print_log(f"error initiating sub runtime 0 {_e}", LogType.Error, 1)
 
-    def runtime(self):
+    def runtime_renderer(self):
+        global RUNTIME_RENDER_TIME
 
-        print_log(f"starting main loop", LogType.Detail, 1)
+        while not self.close_event.is_set():
 
+            all_start_time = time.perf_counter()
+
+            self.render_clock.tick(FRAME_RATE)
+
+            for _ev in pygame.event.get():
+                if _ev.type == pygame.QUIT:
+                    self.close_event.set()
+
+            self.window.fill(BACKGROUND_COLOR)
+
+            if self.current_scene is not None:
+                self.current_scene.root_node.icon_draw()
+                self.current_scene.root_node.render()
+
+                text = self.default_main_font.render("SCENE NOT LOADED", True, DEFAULT_FONT_COLOR)
+                self.window.blit(text, (WINDOW_BASE_WIDTH-INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT))
+
+            self.inspector_node_pack.render()
+            pygame.display.flip()
+            RUNTIME_RENDER_TIME = time.perf_counter() - all_start_time
+
+    def runtime_processer(self):
         global RUNTIME_PROCESS_TIME
         global RUNTIME_NODES_UPDATE_TIME
         global RUNTIME_NODE_ICONS_DRAW_TIME
@@ -472,29 +474,30 @@ class Engine:
                         self.resizing_right_inspector_left_panel = False
 
             RUNTIME_EVENT_PROCESS_TIME = time.perf_counter() - start_time
-            self.window.fill(BACKGROUND_COLOR)
 
             if self.current_scene is not None:
                 start_time = time.perf_counter()
                 self.current_scene.root_node.update()
                 RUNTIME_NODES_UPDATE_TIME = time.perf_counter() - start_time
 
-                start_time = time.perf_counter()
-                self.current_scene.root_node.icon_draw()
-                RUNTIME_NODE_ICONS_DRAW_TIME = time.perf_counter() - start_time
-
                 RUNTIME_NODES_UPDATE_TIME = "SceneNotLoaded"
                 RUNTIME_NODE_ICONS_DRAW_TIME = "SceneNotLoaded"
 
-                text = self.default_main_font.render("SCENE NOT LOADED", True, DEFAULT_FONT_COLOR)
-                self.window.blit(text, (WINDOW_BASE_WIDTH-INSPECTOR_LEFT_PANEL_WIDTH, WINDOW_BASE_HEIGHT))
-
             start_time = time.perf_counter()
-            self.inspector()
+            self.inspector_node_pack.update()
             RUNTIME_INSPECTOR_TIME = time.perf_counter() - start_time
 
-            pygame.display.flip()
             RUNTIME_PROCESS_TIME = time.perf_counter() - all_start_time
+
+    def runtime(self):
+
+        print_log(f"starting main loop", LogType.Detail, 1)
+
+        self.render_thread = threading.Thread(target=self.runtime_renderer)
+        self.render_thread.start()
+
+        self.runtime_processer()
+
 
     def get_hardware_data(self):
         asyncio.run(self.get_hardware_data_async())
@@ -689,6 +692,77 @@ class Engine:
         except Exception as _e:
             print_log("error creating hardware cache", LogType.Error, 3)
 
+    @staticmethod
+    def parse_property_value(value):
+        if isinstance(value, pygame.Color):
+            return f"({value.r}, {value.g}, {value.b})"
+        if isinstance(value, pygame.Surface):
+            return f"{value.get_width()}x{value.get_height()}"
+        if isinstance(value, pygame.Rect):
+            return f"RectObj"
+        if isinstance(value, list):
+            return f"ListObj ({len(value)} items)"
+        if isinstance(value, pygame.font.Font):
+            return f"FontObj"
+        if value is None:
+            return f"None"
+        return str(value)
+
+    @staticmethod
+    def create_scene(_scene: Scene):
+        scene_name = _scene.scene_name
+        scene_version = _scene.scene_version
+        scene_id = _scene.scene_id
+
+        file_template = f"FILETYPE SCENE\n\nscene_name -> {scene_name}\nscene_version -> {scene_version}\nscene_id -> {scene_id}"
+        file_template += "\n\nchildren -> {\n"
+        for child in _scene.nodes:
+            file_template += child.serialize_node(1)
+
+        file_template += "}"
+
+        t_file = open(SCENES_FOLDER_PATH + scene_name + SCENE_EXTENSION, "w+")
+        t_file.write(file_template)
+        t_file.close()
+
+    @staticmethod
+    def load_scene(scene_path):
+        if not scene_path:
+            return [SceneLoadState.PathIsNone, None]
+        if not scene_path.endswith(SCENE_EXTENSION):
+            return [SceneLoadState.PathIsNotScene, None]
+        if not os.path.exists(scene_path):
+            return [SceneLoadState.PathIsNotFound, None]
+
+        file = open(scene_path, "r")
+        brute_data = file.read()
+        print(brute_data)
+
+        extracted_datas = {}
+
+        for line in brute_data.split("\n"):
+            match = re.match(SCENE_DATA_GETTER_REGEX, line)
+            if match:
+                extracted_datas[match.group(1)] = match.group(2)
+
+        print(extracted_datas)
+
+        loaded_scene = Scene()
+        try:
+            loaded_scene.scene_name = extracted_datas["scene_name"]
+        except KeyError:
+            loaded_scene.scene_name = "NotFound"
+        try:
+            loaded_scene.scene_version = extracted_datas["scene_version"]
+        except KeyError:
+            loaded_scene.scene_version = "NotFound"
+        try:
+            loaded_scene.scene_id = extracted_datas["scene_id"]
+        except KeyError:
+            loaded_scene.scene_id = "NotFound"
+
+        print(loaded_scene)
+        return [SceneLoadState.SuccessfulLoaded, loaded_scene]
 
 
 

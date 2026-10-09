@@ -13,8 +13,8 @@ class NodesDisplayNode:
         self.node = None
         self.click_event = None
         self.position = pygame.math.Vector2(0, 0)
-        self.size = pygame.math.Vector2(((INSPECTOR_LEFT_PANEL_WIDTH - 20) / 3) - 10,
-                                        ((INSPECTOR_LEFT_PANEL_WIDTH - 20) / 3) - 10)
+        self.size = pygame.math.Vector2(((INSPECTOR_LEFT_PANEL_WIDTH - 20) / 5) - 10,
+                                        ((INSPECTOR_LEFT_PANEL_WIDTH - 20) / 5) - 10)
         self.base_color = (90, 90, 0)
         self.hover_color = (120, 120, 0)
         self.click_color = (60, 60, 250)
@@ -24,14 +24,21 @@ class NodesDisplayNode:
         self.window = None
         self.is_preview_only = False
 
+        self.image_render = None
+
     def render(self):
+        if self.image_render is None and self.node is not None and hasattr(self.node, 'icon'):
+            self.image_render = pygame.image.load(self.node.icon)
         if self.is_preview_only:
             self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
             pygame.draw.rect(self.window, self.base_color, self.rect)
 
             text = self.font.render(self.name, True, (255, 255, 255))
             text_rect = text.get_rect(center=self.rect.center)
-            self.window.blit(text, text_rect)
+            if self.image_render is not None:
+                self.window.blit(self.image_render, text_rect)
+            else:
+                self.window.blit(text, text_rect)
         else:
 
             self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
@@ -56,7 +63,10 @@ class NodesDisplayNode:
 
             text = self.font.render(self.name, True, (255, 255, 255))
             text_rect = text.get_rect(center=self.rect.center)
-            self.window.blit(text, text_rect)
+            if self.image_render is not None:
+                self.window.blit(self.image_render, text_rect)
+            else:
+                self.window.blit(text, text_rect)
 
     def get_copy(self):
         copy = NodesDisplayNode()
