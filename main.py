@@ -32,6 +32,9 @@ RUNTIME_NODES_UPDATE_TIME = 0.0
 RUNTIME_NODE_ICONS_DRAW_TIME = 0.0
 RUNTIME_INSPECTOR_TIME = 0.0
 
+TICK_RATE = 0
+RENDER_RATE = 0
+
 INSPECTOR_LEFT_PANEL_WIDTH = 400
 
 CURRENT_LOADING_TEXT = ""
@@ -195,6 +198,7 @@ class Engine:
         tp.add_tab(self.create_tab_0_node_pack())
         tp.add_tab(self.create_tab_1_node_pack())
         tp.add_tab(self.create_tab_2_node_pack())
+        tp.add_tab(self.create_tab_3_node_pack())
 
         self.inspector_node_pack.add_node(tp)
 
@@ -306,7 +310,7 @@ class Engine:
 
     def create_tab_2_node_pack(self):
         n = NodePack()
-        n.name = f"TAB 1"
+        n.name = f"Nodes"
         a = list(vars(Button()).keys())
         b = list(vars(Button()).values())
 
@@ -341,6 +345,60 @@ class Engine:
 
         n.add_node(l)
         n.add_node(nd)
+
+        return n
+
+    def create_tab_3_node_pack(self):
+
+        n = NodePack()
+        n.name = f"Profiler"
+        a = [
+            "TickRate",
+            "FrameRate",
+            "",
+            "TickTime",
+            "FrameTime",
+        ]
+        b = [
+            f"{TICK_RATE}",
+            f"{RENDER_RATE}",
+            "",
+            f"{RUNTIME_PROCESS_TIME}",
+            f"{RUNTIME_RENDER_TIME}",
+        ]
+
+        t_text = ""
+        for i2 in a:
+            t_text += str(i2) + "\n"
+
+        bt_text = ""
+        for bi2 in b:
+            bt_text += self.parse_property_value(bi2) + "\n"
+
+
+        l = Label()
+        l.window = self.window
+        l.position = pygame.math.Vector2(160, 40)
+        l.text = "Profiler"
+        l.update_render_data()
+
+        sl = ScrollableLabel()
+        sl.window = self.window
+        sl.position = pygame.math.Vector2(20, 70)
+        sl.text = t_text
+        sl.font_size = 16
+        sl.update_render_data()
+
+        sl2 = ScrollableLabel()
+        sl2.window = self.window
+        sl2.position = pygame.math.Vector2(220, 70)
+        sl2.text = bt_text
+        sl2.font_size = 16
+        sl2.update_render_data()
+
+        n.add_node(l)
+        n.add_node(sl)
+        n.add_node(sl2)
 
         return n
 
@@ -410,6 +468,7 @@ class Engine:
 
     def runtime_renderer(self):
         global RUNTIME_RENDER_TIME
+        global RENDER_RATE
 
         while not self.close_event.is_set():
 
@@ -432,6 +491,8 @@ class Engine:
 
             self.inspector_node_pack.render()
             pygame.display.flip()
+
+            RENDER_RATE = self.render_clock.get_fps()
             RUNTIME_RENDER_TIME = time.perf_counter() - all_start_time
 
     def runtime_processer(self):
@@ -440,6 +501,7 @@ class Engine:
         global RUNTIME_NODE_ICONS_DRAW_TIME
         global RUNTIME_INSPECTOR_TIME
         global RUNTIME_EVENT_PROCESS_TIME
+        global TICK_RATE
 
         global INSPECTOR_LEFT_PANEL_WIDTH
 
@@ -483,10 +545,9 @@ class Engine:
                 RUNTIME_NODES_UPDATE_TIME = "SceneNotLoaded"
                 RUNTIME_NODE_ICONS_DRAW_TIME = "SceneNotLoaded"
 
-            start_time = time.perf_counter()
             self.inspector_node_pack.update()
-            RUNTIME_INSPECTOR_TIME = time.perf_counter() - start_time
 
+            TICK_RATE = self.process_clock.get_fps()
             RUNTIME_PROCESS_TIME = time.perf_counter() - all_start_time
 
     def runtime(self):
