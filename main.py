@@ -32,8 +32,8 @@ RUNTIME_NODES_UPDATE_TIME = 0.0
 RUNTIME_NODE_ICONS_DRAW_TIME = 0.0
 RUNTIME_INSPECTOR_TIME = 0.0
 
-TICK_RATE = 0
-RENDER_RATE = 0
+TICK_RATE_COUNT = 0
+RENDER_RATE_COUNT = 0
 
 INSPECTOR_LEFT_PANEL_WIDTH = 400
 
@@ -66,6 +66,7 @@ def print_log(message, type, indent=0):
 class Engine:
     def __init__(self):
 
+        self.inspector_profiler_dynamic_label = None
         self.render_thread = None
         self.cpu_cores = None
         print_log(f"initializing pygame", LogType.Detail, 1)
@@ -360,20 +361,21 @@ class Engine:
             "FrameTime",
         ]
         b = [
-            f"{TICK_RATE}",
-            f"{RENDER_RATE}",
+            f"{TICK_RATE_COUNT}",
+            f"{RENDER_RATE_COUNT}",
             "",
             f"{RUNTIME_PROCESS_TIME}",
             f"{RUNTIME_RENDER_TIME}",
         ]
 
-        t_text = ""
-        for i2 in a:
-            t_text += str(i2) + "\n"
-
         bt_text = ""
         for bi2 in b:
             bt_text += self.parse_property_value(bi2) + "\n"
+
+
+        t_text = ""
+        for i2 in a:
+            t_text += str(i2) + "\n"
 
 
         l = Label()
@@ -395,6 +397,8 @@ class Engine:
         sl2.text = bt_text
         sl2.font_size = 16
         sl2.update_render_data()
+
+        self.inspector_profiler_dynamic_label = sl2
 
         n.add_node(l)
         n.add_node(sl)
@@ -468,7 +472,7 @@ class Engine:
 
     def runtime_renderer(self):
         global RUNTIME_RENDER_TIME
-        global RENDER_RATE
+        global RENDER_RATE_COUNT
 
         while not self.close_event.is_set():
 
@@ -492,7 +496,7 @@ class Engine:
             self.inspector_node_pack.render()
             pygame.display.flip()
 
-            RENDER_RATE = self.render_clock.get_fps()
+            RENDER_RATE_COUNT = self.render_clock.get_fps()
             RUNTIME_RENDER_TIME = time.perf_counter() - all_start_time
 
     def runtime_processer(self):
@@ -501,7 +505,7 @@ class Engine:
         global RUNTIME_NODE_ICONS_DRAW_TIME
         global RUNTIME_INSPECTOR_TIME
         global RUNTIME_EVENT_PROCESS_TIME
-        global TICK_RATE
+        global TICK_RATE_COUNT
 
         global INSPECTOR_LEFT_PANEL_WIDTH
 
@@ -537,6 +541,8 @@ class Engine:
 
             RUNTIME_EVENT_PROCESS_TIME = time.perf_counter() - start_time
 
+            self.update_inspector_dynamic_texts()
+
             if self.current_scene is not None:
                 start_time = time.perf_counter()
                 self.current_scene.root_node.update()
@@ -547,8 +553,27 @@ class Engine:
 
             self.inspector_node_pack.update()
 
-            TICK_RATE = self.process_clock.get_fps()
+            TICK_RATE_COUNT = self.process_clock.get_fps()
             RUNTIME_PROCESS_TIME = time.perf_counter() - all_start_time
+
+    def update_inspector_dynamic_texts(self):
+        self.update_inspector_profiler_dynamic_texts()
+
+    def update_inspector_profiler_dynamic_texts(self):
+        b = [
+            f"{TICK_RATE_COUNT}",
+            f"{RENDER_RATE_COUNT}",
+            "",
+            f"{RUNTIME_PROCESS_TIME}",
+            f"{RUNTIME_RENDER_TIME}",
+        ]
+
+        bt_text = ""
+        for bi2 in b:
+            bt_text += self.parse_property_value(bi2) + "\n"
+
+        self.inspector_profiler_dynamic_label.text = bt_text
+        self.inspector_profiler_dynamic_label.update_render_data()
 
     def runtime(self):
 
