@@ -1,0 +1,3 @@
+[tool.ruff.lint]
+ignore = ["I001"]
+ignore = ["f541"]

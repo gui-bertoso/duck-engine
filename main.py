@@ -10,9 +10,10 @@ from nodes import *
 from settings import *
 from scene import *
 
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
 import pygame
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+
 import threading
 import platform
 import time
