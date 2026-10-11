@@ -17,7 +17,7 @@ import pygame
 import threading
 import platform
 import psutil
-import wmi
+#import wmi
 import subprocess
 import re
 import enum
@@ -376,15 +376,15 @@ class App:
         print(f"         [+] getting GPU info")
 
         print(f"             [+] creating WMI computer")
-        computer = wmi.WMI()
-        print(f"                 [+] computer created -> {computer}")
+        #computer = wmi.WMI()
+        #print(f"                 [+] computer created -> {computer}")
 
-        gpus = computer.Win32_VideoController()
-        self.gpu_count = len(gpus)
+        #gpus = computer.Win32_VideoController()
+        #self.gpu_count = len(gpus)
 
-        gpu = gpus[0]
+        #gpu = gpus[0]
 
-        self.gpu_name = gpu.name
+        #self.gpu_name = gpu.name
 
         self.gpu_video_memory = self.get_gpu_video_memory()
 

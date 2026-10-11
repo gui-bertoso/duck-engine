@@ -18,7 +18,7 @@ import threading
 import platform
 import time
 import psutil
-import wmi
+
 import subprocess
 import re
 import asyncio
@@ -628,12 +628,6 @@ class Engine:
 
         print_log("preparing to get gpus data", LogType.Detail, 2)
 
-        print_log("creating wmi computer", LogType.Detail, 3)
-        computer = wmi.WMI()
-
-        print_log("getting gpus", LogType.Detail, 3)
-        gpus = computer.Win32_VideoController()
-        self.gpu_count = len(gpus)
         self.ready_percentage += 7.7
 
         print_log("getting main gpu data", LogType.Detail, 3)
@@ -651,7 +645,7 @@ class Engine:
 
     async def hardware_getter(self, data_type:HardwareCacheType):
         print_log("locating hardware data cache", LogType.Detail, 2)
-        local_app_data = os.environ["LOCALAPPDATA"]
+        local_app_data = "cache"
         engine_cache = os.path.join(local_app_data, "duck_engine")
 
         if not os.path.isdir(engine_cache):
