@@ -1,5 +1,9 @@
+import glob
+import json
+import locale
 import os
 
+import settings
 from enums import *
 
 import logging
@@ -474,6 +478,9 @@ class Engine:
     def runtime_renderer(self):
         global RUNTIME_RENDER_TIME
         global RENDER_RATE_COUNT
+        print_log(f"creating main window", LogType.Detail, 1)
+        self.window = pygame.display.set_mode((WINDOW_BASE_WIDTH, WINDOW_BASE_HEIGHT), vsync=VSYNC_ENABLED, display=DEFAULT_DISPLAY)
+
 
         while not self.close_event.is_set():
 
@@ -593,8 +600,9 @@ class Engine:
         self.update_used_video_memory()
 
     def update_used_video_memory(self):
-        used_video_memory = subprocess.check_output(["powershell", "-Command", "(Get-Counter '\\GPU Adapter Memory(*)\\Dedicated Usage').CounterSamples.CookedValue"], text=True)[0]
-        video_memory = float(used_video_memory) / (1024 ** 3)
+        paths = glob.glob("/sys/class/drm/card*/device/mem_info_vram_used")
+        used_video_memory = subprocess.run(["cat", paths[0]], text=True, capture_output=True, check=True)
+        video_memory = float(used_video_memory.stdout) / (1024 ** 3)
         self.gpu_used_video_memory = round(video_memory, 2)
 
     def update_used_memory(self):
@@ -655,103 +663,67 @@ class Engine:
         if not os.path.exists(engine_cache + "/hardware_data_cache.json"):
             print_log("cache file not found, creating", LogType.Detail, 3)
             os.open(engine_cache + "/hardware_data_cache.json", os.O_CREAT)
-            self.create_hardware_data_cache(engine_cache)
+            self.create_hardware_data_cache()
 
         print_log("all right to ready cache", LogType.Detail, 3)
 
-        content = self.read_hardware_data_cache(engine_cache)
+        content = self.read_hardware_data_cache()
         match data_type:
             case HardwareCacheType.GpuVideoMemory:
                 return content["gpu_video_memory"]
             case HardwareCacheType.GpuName:
                 return content["gpu_name"]
             case HardwareCacheType.GpuChipType:
-                return content["gpu_chip_type"]
+                return content["gpu_vendor"]
             case HardwareCacheType.RamTotalMemory:
-                return content["ram_total_memory"]
-            case HardwareCacheType.PageFileMemory:
-                return content["page_file_memory"]
+                return content["memory_total"]
             case HardwareCacheType.OperatingSystem:
-                return content["operating_system"]
+                return content["operational_system"]
             case HardwareCacheType.Language:
                 return content["language"]
             case HardwareCacheType.Manufacturer:
-                return content["manufacturer"]
+                return content["vendor id"]
             case HardwareCacheType.Processor:
-                    return content["processor_name"]
+                    return content["model name:"]
             case HardwareCacheType.ProcessorClockSpeed:
-                return content["processor_clock_speed"]
+                return content["cpu max m_hz"]
             case HardwareCacheType.ProcessorCores:
-                return content["processor_cores"]
-            case HardwareCacheType.DxVersion:
-                return content["dx_version"]
+                return content["core(s) per socket:"]
             case HardwareCacheType.SystemManufacturer:
-                return content["system_manufacturer"]
+                return content["operating_system_platform"]
             case HardwareCacheType.SystemModel:
-                return content["system_model"]
+                return content["architecture"]
             case HardwareCacheType.SystemType:
-                return content["system_type"]
+                return content["operational_system"]
         return None
 
-    @staticmethod
-    def read_hardware_data_cache(engine_cache):
-        all_data = {}
+    def to_snake_case(self, name):
+        name = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
-        file = open(engine_cache + "/hardware_data_cache.json", "r")
-        content = file.read()
-        file.close()
+    def create_hardware_data_cache(self):
+        file_path = "cache/hdc.json"
+        folder_path = os.path.dirname(file_path)
+        if folder_path:
+            os.makedirs(folder_path, exist_ok=True)
 
-        print_log("reading all data", LogType.Detail, 3)
-        memory_mb = re.findall(r"<DedicatedMemory>(.*?)</DedicatedMemory>", content)
-
-        print_log("finding correct memory value", LogType.Detail, 2)
-        much_video_memory = 0
-
-        print(memory_mb)
-        for mem_text in memory_mb:
-            numbers = "".join(filter(str.isdigit, mem_text))
-            if numbers:
-                video_memory = round(int(numbers) / 1024)
-                if video_memory > much_video_memory:
-                    much_video_memory = video_memory
-
-        all_data["gpu_video_memory"] = 0
-
-        print_log("verifying memory value", LogType.Detail, 2)
-        if much_video_memory > 0:
-            all_data["gpu_video_memory"] = much_video_memory
-
-        all_data["gpu_name"] = re.findall(r"<CardName>(.*?)</CardName>", content)[0]
-        all_data["gpu_chip_type"] = re.findall(r"<ChipType>(.*?)</ChipType>", content)[0]
-        all_data["ram_total_memory"] = re.findall(r"<Memory>(.*?)</Memory>", content)[0]
-        all_data["page_file_memory"] = re.findall(r"<PageFile>(.*?)</PageFile>", content)[0]
-        all_data["operating_system"] = re.findall(r"<OperatingSystem>(.*?)</OperatingSystem>", content)[0]
-        all_data["system_manufacturer"] = re.findall(r"<SystemManufacturer>(.*?)</SystemManufacturer>", content)[0]
-        all_data["system_model"] = re.findall(r"<SystemModel>(.*?)</SystemModel>", content)[0]
-
-        is_64b = re.findall(r"<DxDiag64Bit>(.*?)</DxDiag64Bit>", content)[0]
-        if is_64b == "1":
-            all_data["system_type"] = "x64"
-        else:
-            all_data["system_type"] = "x32"
-
-        all_data["language"] = re.findall(r"<Language>(.*?)</Language>", content)[0]
-        all_data["dx_version"] = re.findall(r"<DirectXVersion>(.*?)</DirectXVersion>", content)[0]
-
-        processor = re.findall(r"<Processor>(.*?)</Processor>", content)[0]
-        cpus = re.findall(r"\((\d+) CPUs\)", processor)[0]
-        all_data["processor_name"] = re.findall(r"<Processor>(.*?) \(\d+ CPUs\)", content)[0]
-        all_data["processor_cores"] = cpus
-        all_data["processor_clock_speed"] = re.findall(r"~([\d.]+)GHz", content)[0]
-        all_data["manufacturer"] = re.findall(r"<Manufacturer>(.*?)</Manufacturer>", content)[0]
-
-        return all_data
-
-    @staticmethod
-    def create_hardware_data_cache(engine_cache):
-        file = open(engine_cache + "/hardware_data_cache.json", "w+")
         try:
-            result = subprocess.run(
+            h_data = {}
+
+            h_data["CacheVersion"] = settings.HDC_VERSION
+
+            system_name = platform.system()
+            h_data["OperationalSystem"] = system_name
+            system_version = platform.release()
+            h_data["OperationalSystemVersion"] = system_version
+            system_platform = platform.platform()
+            h_data["OperatingSystemPlatform"] = system_platform
+
+            language, codification = locale.getdefaultlocale()
+            h_data["Language"] = language
+            h_data["LanguageCodification"] = codification
+
+            lscpu_getter = subprocess.run(
                 ["lscpu", "--json"],
                 capture_output=True,
                 check=True,
@@ -760,9 +732,50 @@ class Engine:
                 env={**__import__("os").environ, "LC_ALL": "C"}
             )
 
-            print()
+            if lscpu_getter.returncode == 0:
+                datas = json.loads(lscpu_getter.stdout)["lscpu"]
+                for data in datas:
+                    h_data[data['field']] = data['data']
+
+            glxinfo_getter = subprocess.run(
+                "glxinfo",
+                capture_output=True,
+                check=True,
+                text=True,
+                timeout=10,
+                env={**__import__("os").environ, "LC_ALL": "C"}
+            )
+
+            if glxinfo_getter.returncode == 0:
+                brute_data = glxinfo_getter.stdout
+                vendor = re.search(r"Vendor:\s*(.+?)(?:\s*\(|$)", brute_data).group(1)
+                h_data["GpuVendor"] = vendor
+                device = re.search(r"Device:\s*(.+?)(?:\s*\(|$)", brute_data).group(1)
+                h_data["GpuName"] = device
+                video_memory = re.search(r"Video memory:\s*([0-9]+)\s*[MGB]B", brute_data).group(1)
+                h_data["GpuVideoMemory"] = str(round((int(video_memory) / 1024), 1)) + "GB"
+
+            memory_getter = psutil.virtual_memory()
+            memory_total = memory_getter.total / 1024 / 1024 / 1024
+
+            h_data["MemoryTotal"] = str(round(memory_total, 1)) + "GB"
+
+            h_data = {
+                self.to_snake_case(key): value
+                for key, value in h_data.items()
+            }
+
+            with open(file_path, "w") as f:
+                json.dump(h_data, f, indent=4)
+
         except Exception as _e:
-            print_log("error creating hardware cache", LogType.Error, 3)
+            print(f"error {_e}")
+
+    def read_hardware_data_cache(self):
+        file_path = "cache/hdc.json"
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
 
     @staticmethod
     def parse_property_value(value):
