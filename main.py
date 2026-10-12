@@ -751,25 +751,16 @@ class Engine:
     def create_hardware_data_cache(engine_cache):
         file = open(engine_cache + "/hardware_data_cache.json", "w+")
         try:
-            print_log("creating temp file", LogType.Detail, 4)
-            temp_file = os.path.join(os.environ["TEMP"], "dx_vram_report.xml")
+            result = subprocess.run(
+                ["lscpu", "--json"],
+                capture_output=True,
+                check=True,
+                text=True,
+                timeout=10,
+                env={**__import__("os").environ, "LC_ALL": "C"}
+            )
 
-            print_log("creating subprocess", LogType.Detail, 4)
-            subprocess.run(["dxdiag", "/x", temp_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           check=True)
-
-            print_log("verifying temp files as generated", LogType.Detail, 4)
-            if os.path.exists(temp_file):
-                print_log("trying to open temp file", LogType.Detail, 4)
-                with open(temp_file, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-
-                print_log("deleting temp file", LogType.Detail, 4)
-                os.remove(temp_file)
-
-                print_log("writing hardware cache", LogType.Detail, 4)
-                file.write(content)
-                file.close()
+            print()
         except Exception as _e:
             print_log("error creating hardware cache", LogType.Error, 3)
 
