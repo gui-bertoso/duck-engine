@@ -316,7 +316,7 @@ class Engine:
 
     def create_tab_2_node_pack(self):
         n = NodePack()
-        n.name = f"Nodes"
+        n.name = f"Scene"
         a = list(vars(Button()).keys())
         b = list(vars(Button()).values())
 
@@ -332,25 +332,34 @@ class Engine:
         l = Label()
         l.window = self.window
         l.position = pygame.math.Vector2(160, 40)
-        l.text = "Nodes picker"
+        l.text = "Scene"
         l.update_render_data()
 
+        ls_b = Button()
+        ls_b.window = self.window
+        ls_b.click_event = self.click_event
+        ls_b.text = "Load Scene"
+        ls_b.position = pygame.math.Vector2(40, 70)
+        ls_b.size = pygame.math.Vector2(320, 60)
+        ls_b.base_color = (100, 100, 100)
+        ls_b.hover_color = (50, 50, 50)
+        ls_b.pressed_color = (150, 150, 150)
+        ls_b.update_render_data()
 
-        nd = NodesDisplay()
-        nd.window = self.window
-        nd.click_event = self.click_event
-        nd.position = pygame.math.Vector2(20, 70)
-        nd.update_rect_data()
-
-        for node in self.nodes:
-            na = NodesDisplayNode()
-            na.name = node.__name__
-            na.node = node
-            nd.add_node(na)
-
+        ss_b = Button()
+        ss_b.window = self.window
+        ss_b.click_event = self.click_event
+        ss_b.text = "Save Scene"
+        ss_b.position = pygame.math.Vector2(40, 160)
+        ss_b.size = pygame.math.Vector2(320, 60)
+        ss_b.base_color = (100, 100, 100)
+        ss_b.hover_color = (50, 50, 50)
+        ss_b.pressed_color = (150, 150, 150)
+        ss_b.update_render_data()
 
         n.add_node(l)
-        n.add_node(nd)
+        n.add_node(ls_b)
+        n.add_node(ss_b)
 
         return n
 

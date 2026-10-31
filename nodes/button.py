@@ -45,6 +45,9 @@ class Button(Node):
 
         self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
 
+    def update_render_data(self):
+        self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
+
     def render(self):
         super().render()
 
