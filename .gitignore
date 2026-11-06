@@ -1,19 +1,7 @@
 __pycache__
 .idea
 
-# Local tooling
-.codex
-.ai/
-.claude/
-.cursor/
-.cline/
-.roo/
-.clinerules
-.cursorrules
-.windsurfrules
-AGENTS.md
-CLAUDE.md
-GEMINI.md
+hdc.json
 
 __pycache__/
 *.py[cod]
